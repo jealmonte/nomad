@@ -9,9 +9,9 @@ interface DiscoverCardProps {
   location: string
   image: string
   aiScore: number
-  distance: string
+  distance: string | number
   tags: string[]
-  matchReason: string
+  matchReason?: string
 }
 
 export function DiscoverCard({ name, location, image, aiScore, distance, tags, matchReason }: DiscoverCardProps) {
@@ -37,7 +37,7 @@ export function DiscoverCard({ name, location, image, aiScore, distance, tags, m
             <MapPin className="w-3 h-3" />
             <span className="truncate">{location}</span>
             <span>•</span>
-            <span>{distance}</span>
+            <span>{typeof distance === 'number' ? `${distance} km` : distance}</span>
           </div>
 
           {/* Tags */}
@@ -50,7 +50,7 @@ export function DiscoverCard({ name, location, image, aiScore, distance, tags, m
           </div>
 
           {/* Match Reason */}
-          <p className="text-xs text-primary">{matchReason}</p>
+          {matchReason && <p className="text-xs text-primary">{matchReason}</p>}
         </div>
       </div>
     </Card>
