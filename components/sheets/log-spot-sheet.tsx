@@ -6,10 +6,11 @@ import {
     BottomSheetTextInput,
 } from '@gorhom/bottom-sheet';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Image, Pressable, Text, View } from 'react-native';
 
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import * as ImagePicker from 'expo-image-picker';
 
 type LogSpotSheetProps = {
     open: boolean;
@@ -23,8 +24,30 @@ export function LogSpotSheet({ open, onOpenChange }: LogSpotSheetProps) {
     const snapPoints = useMemo(() => ['90%'], []);
     const [rating, setRating] = useState(0);
     const [selectedTags, setSelectedTags] = useState<string[]>([]);
+    const [photos, setPhotos] = useState<string[]>([]);
+
     const theme = useColorScheme() ?? 'light';
 
+    const pickPhotos = async () => {
+        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (status !== 'granted') return;
+
+        const result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ImagePicker.MediaTypeOptions.Images,
+            allowsMultipleSelection: true,
+            selectionLimit: 6,
+            quality: 0.8,
+        });
+
+        if (!result.canceled) {
+            const uris = result.assets.map((asset) => asset.uri);
+            setPhotos((prev) => [...prev, ...uris]);
+        }
+    };
+
+    const removePhoto = (uri: string) => {
+        setPhotos((prev) => prev.filter((p) => p !== uri));
+    };
     useEffect(() => {
         if (open) sheetRef.current?.present();
         else sheetRef.current?.dismiss();
@@ -55,10 +78,27 @@ export function LogSpotSheet({ open, onOpenChange }: LogSpotSheetProps) {
                     </Pressable>
                 </View>
 
-                <Pressable className="h-44 rounded-xl border-2 border-dashed border-border items-center justify-center bg-muted">
+                <Pressable
+                    onPress={pickPhotos}
+                    className="h-44 rounded-xl border-2 border-dashed border-border items-center justify-center bg-muted">
                     <Feather name="camera" size={28} color={Colors[theme].icon} />
                     <Text className="text-sm text-muted-foreground mt-2">Add photos</Text>
                 </Pressable>
+
+                {photos.length > 0 && (
+                    <View className="flex-row flex-wrap gap-2 mt-3">
+                        {photos.map((uri) => (
+                            <View key={uri} className="relative">
+                                <Image source={{ uri }} className="h-20 w-20 rounded-lg" />
+                                <Pressable
+                                    onPress={() => removePhoto(uri)}
+                                    className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-background items-center justify-center">
+                                    <Feather name="x" size={12} color={Colors[theme].text} />
+                                </Pressable>
+                            </View>
+                        ))}
+                    </View>
+                )}
 
                 <View className="mt-6">
                     <Text className="text-sm font-medium text-foreground mb-2">Spot Name</Text>
