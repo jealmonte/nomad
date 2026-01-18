@@ -1,8 +1,14 @@
 import { Feather } from '@expo/vector-icons';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, Image, Modal, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+  withTiming,
+} from 'react-native-reanimated';
 
 import { DiscoverCard, type DiscoverCardProps } from '@/components/cards/discover-card';
 import { getLucky } from '@/services/woodwide';
@@ -82,6 +88,64 @@ const recommendations: DiscoverCardProps[] = [
   },
 ];
 
+const liveEvents = [
+  {
+    id: 'locomotion-weekend',
+    title: 'Locomotion Weekend',
+    venue: 'Kamin Science Center',
+    location: 'One Allegheny Ave',
+    time: '10 AM – 4 PM',
+    tag: 'family',
+  },
+  {
+    id: 'united-we-dance',
+    title: 'United We Dance: The Ultimate Rave Experience',
+    venue: 'Enclave',
+    location: 'Pittsburgh',
+    time: '9 PM',
+    tag: 'music',
+  },
+  {
+    id: 'dinosaur-world-live',
+    title: 'Dinosaur World Live',
+    venue: 'Byham Theater',
+    location: '101 6th St',
+    time: '11 AM – 2 PM',
+    tag: 'family',
+  },
+];
+
+function LiveEventCard({
+  title,
+  venue,
+  time,
+  tag,
+  onPress,
+}: {
+  title: string;
+  venue: string;
+  time: string;
+  tag: string;
+  onPress?: () => void;
+}) {
+  return (
+    <Pressable onPress={onPress} className="flex-1 min-w-0 bg-card border border-border rounded-xl p-3">
+      <Text className="text-foreground font-semibold text-sm mb-1" numberOfLines={2}>
+        {title}
+      </Text>
+      <Text className="text-xs text-muted-foreground" numberOfLines={1}>
+        {venue}
+      </Text>
+      <Text className="text-xs text-muted-foreground mt-0.5" numberOfLines={1}>
+        {time}
+      </Text>
+      <View className="mt-2 self-start bg-secondary rounded-full px-2 py-1">
+        <Text className="text-xs text-secondary-foreground">{tag}</Text>
+      </View>
+    </Pressable>
+  );
+}
+
 const locale = Localization.getLocales()[0];
 const region = locale?.regionCode;
 
@@ -105,6 +169,22 @@ export function DiscoverTab() {
   // 2. Add state for the Get Lucky feature
   const [isLuckyLoading, setIsLuckyLoading] = useState(false);
   const [luckySpot, setLuckySpot] = useState<any>(null);
+  const [selectedEvent, setSelectedEvent] = useState<(typeof liveEvents)[number] | null>(null);
+
+  const eventScale = useSharedValue(0.9);
+  const eventOpacity = useSharedValue(0);
+  const eventModalStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: eventScale.value }],
+    opacity: eventOpacity.value,
+  }));
+
+  useEffect(() => {
+    if (!selectedEvent) return;
+    eventScale.value = 0.9;
+    eventOpacity.value = 0;
+    eventScale.value = withSpring(1, { damping: 14, stiffness: 150 });
+    eventOpacity.value = withTiming(1, { duration: 150 });
+  }, [selectedEvent, eventOpacity, eventScale]);
 
   const toggleTag = (tag: string) => {
     setSelectedTags((prev) => (prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]));
@@ -143,21 +223,29 @@ export function DiscoverTab() {
     }
   };
 
-  const filtered = useMemo(() => {
-    if (!searchQuery && selectedTags.length === 0) return recommendations;
-    return recommendations.filter((spot) => {
-      const matchesQuery =
-        !searchQuery ||
-        spot.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        spot.location.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesTags =
-        selectedTags.length === 0 || selectedTags.some((tag) => spot.tags.includes(tag));
-      return matchesQuery && matchesTags;
-    });
-  }, [searchQuery, selectedTags]);
+  const recommendedIds = new Set([2, 3]);
+
+  const filterSpot = (spot: DiscoverCardProps) => {
+    const matchesQuery =
+      !searchQuery ||
+      spot.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      spot.location.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesTags =
+      selectedTags.length === 0 || selectedTags.some((tag) => spot.tags.includes(tag));
+    return matchesQuery && matchesTags;
+  };
+
+  const filteredRecommended = useMemo(
+    () => recommendations.filter((spot) => recommendedIds.has(spot.id) && filterSpot(spot)),
+    [searchQuery, selectedTags]
+  );
+  const filteredPopular = useMemo(
+    () => recommendations.filter((spot) => !recommendedIds.has(spot.id) && filterSpot(spot)),
+    [searchQuery, selectedTags]
+  );
 
   type ListItem = { type: 'intro'; id: 'intro' } | DiscoverCardProps;
-  const listData: ListItem[] = [{ type: 'intro', id: 'intro' }, ...filtered];
+  const listData: ListItem[] = [{ type: 'intro', id: 'intro' }, ...filteredRecommended];
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={['top']}>
@@ -229,18 +317,68 @@ export function DiscoverTab() {
                   )}
                 </Pressable>
 
-                <View className="py-3 flex-row items-center gap-2">
-                  <Feather name="map-pin" size={16} color="#33d6b3" />
-                  <Text className="text-sm text-muted-foreground">{locationLabel}</Text>
+                <View className="flex-row items-center justify-between mt-4 mb-2">
+                  <Text className="text-lg font-semibold text-foreground mb-1">Live Events</Text>
+                  <View className="flex-row items-center gap-2">
+                    <Feather name="map-pin" size={16} color="#33d6b3" />
+                    <Text className="text-sm text-muted-foreground">{locationLabel}</Text>
+                  </View>
+                </View>
+                <View className="flex-row gap-3">
+                  {liveEvents.map((ev) => (
+                    <LiveEventCard key={ev.id} {...ev} onPress={() => setSelectedEvent(ev)} />
+                  ))}
                 </View>
 
-                <Text className="text-lg font-semibold text-foreground mb-3">Recommended for You</Text>
+                <Text className="text-lg font-semibold text-foreground mb-3 mt-3">Recommended for You</Text>
               </View>
             );
           }
           return <DiscoverCard {...item} />;
         }}
+        ListFooterComponent={
+          <View>
+            <Text className="text-lg font-semibold text-foreground mb-3">Popular in Pittsburgh</Text>
+            <View>
+              {filteredPopular.map((spot) => (
+                <DiscoverCard key={spot.id} {...spot} />
+              ))}
+            </View>
+          </View>
+        }
       />
+
+      <Modal
+        transparent
+        visible={!!selectedEvent}
+        animationType="none"
+        onRequestClose={() => setSelectedEvent(null)}>
+        <Pressable
+          className="flex-1 bg-black/50 items-center justify-center"
+          onPress={() => setSelectedEvent(null)}>
+          <Pressable
+            onPress={(event) => event.stopPropagation()}
+            className="self-center"
+            style={{ maxWidth: '50%' }}>
+            <Animated.View
+              style={eventModalStyle}
+              className="bg-card border border-border rounded-2xl p-4 items-center">
+              <Text className="text-lg font-semibold text-foreground text-center">
+                {selectedEvent?.title}
+              </Text>
+              <Text className="text-sm text-muted-foreground mt-1 text-center" numberOfLines={1}>
+                {selectedEvent?.venue}
+              </Text>
+              <Text className="text-sm text-muted-foreground mt-0.5 text-center" numberOfLines={1}>
+                {selectedEvent?.time}
+              </Text>
+              <View className="mt-3 self-center bg-secondary rounded-full px-2 py-1">
+                <Text className="text-xs text-secondary-foreground">{selectedEvent?.tag}</Text>
+              </View>
+            </Animated.View>
+          </Pressable>
+        </Pressable>
+      </Modal>
 
       {/* 5. Result Modal */}
       <Modal visible={!!luckySpot} animationType="slide" transparent>
