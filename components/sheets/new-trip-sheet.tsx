@@ -5,13 +5,13 @@ import {
   BottomSheetScrollView,
   BottomSheetTextInput,
 } from '@gorhom/bottom-sheet';
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { Pressable, Text, View, Modal, StyleSheet, Alert } from 'react-native';
 import { format, isAfter } from 'date-fns';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Alert, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { SimpleCalendar } from '@/components/ui/simple-calendar';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
-import { SimpleCalendar } from '@/components/ui/simple-calendar';
 import { GeneratedItinerarySheet } from './GeneratedItinerarySheet'; // Ensure exact file name match
 
 type NewTripSheetProps = {
@@ -19,8 +19,25 @@ type NewTripSheetProps = {
   onOpenChange: (open: boolean) => void;
 };
 
-const interests = ['temples', 'food', 'nightlife', 'nature', 'museums', 'beaches', 'shopping', 'art'];
-
+const interests = [
+  'Temples',
+  'Coffee',
+  'Food',
+  'Nightlife',
+  'Nature',
+  'Museums',
+  'Beaches',
+  'Markets',
+  'Outdoors',
+  'Photo',
+  'Gardens',
+  'Architecture',
+  'History',
+  'Family',
+  'Wildlife',
+  'Music',
+  ];
+  
 export function NewTripSheet({ open, onOpenChange }: NewTripSheetProps) {
   const sheetRef = useRef<BottomSheetModal>(null);
   const snapPoints = useMemo(() => ['85%'], []);

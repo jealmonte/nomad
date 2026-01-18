@@ -2,14 +2,14 @@ import { Feather, Ionicons } from '@expo/vector-icons';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import React, { useEffect, useMemo, useState } from 'react';
 import {
-    ActivityIndicator,
-    Alert,
-    FlatList,
-    Image,
-    Modal,
-    Pressable,
-    Text,
-    View,
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  Image,
+  Modal,
+  Pressable,
+  Text,
+  View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -115,9 +115,7 @@ export function HomeTab() {
 
   const [isLuckyLoading, setIsLuckyLoading] = useState(false);
   const [luckySpot, setLuckySpot] = useState<any>(null);
-
   // Fetch posts from Supabase
-  useEffect(() => {
     const fetchFeed = async () => {
       setLoading(true);
       console.log('FEED: fetching from Supabase...');
@@ -198,6 +196,7 @@ export function HomeTab() {
       setLoading(false);
     };
 
+  useEffect(() => {
     fetchFeed();
   }, []);
 
@@ -206,6 +205,10 @@ export function HomeTab() {
     [posts],
   );
 
+  const handleSpotLogged = async () => {
+  // simple: re-run the same Supabase query
+  await fetchFeed();
+};
   const handleGetLucky = async () => {
     setIsLuckyLoading(true);
     setLuckySpot(null);
@@ -321,7 +324,16 @@ export function HomeTab() {
         }
       />
 
-      <LogSpotSheet open={showLogSpot} onOpenChange={setShowLogSpot} />
+      <LogSpotSheet
+        open={showLogSpot}
+        onOpenChange={async (open) => {
+          setShowLogSpot(open);
+          if (!open) {
+            // sheet just closed – refresh feed
+            await fetchFeed();
+          }
+        }}
+      />
       <NewTripSheet open={showNewTripSheet} onOpenChange={setShowNewTripSheet} />
 
       {/* Lucky Result Modal */}

@@ -1,6 +1,7 @@
 // app/(tabs)/profile.tsx
 import { ProfileSettingsModal } from '@/components/profile-settings-modal';
 import { ProfileTab } from '@/components/tabs/profile-tab';
+import { SpotsLoggedTab } from '@/components/tabs/spots-logged-tab';
 import { getPublicAvatarUrl } from '@/lib/storage';
 import { supabase } from '@/lib/supabase';
 import React, { useEffect, useState } from 'react';
@@ -27,6 +28,7 @@ export default function ProfileScreen() {
   const [profile, setProfile] = useState<ProfileRow | null>(null);
   const [loading, setLoading] = useState(true);
   const [showSettings, setShowSettings] = useState(false);
+  const [mode, setMode] = useState<'profile' | 'spots'>('profile');
 
   const handleLogout = async () => {
     const { error } = await supabase.auth.signOut();
@@ -37,6 +39,7 @@ export default function ProfileScreen() {
 
   const loadProfile = async () => {
     setLoading(true);
+
     const {
       data: { user },
       error: userError,
@@ -73,6 +76,7 @@ export default function ProfileScreen() {
     loadProfile();
   }, []);
 
+  // While loading or missing profile, show spinner
   if (loading || !profile) {
     return (
       <View
@@ -81,21 +85,26 @@ export default function ProfileScreen() {
           backgroundColor: '#05070b',
           justifyContent: 'center',
           alignItems: 'center',
-        }}>
+        }}
+      >
         <ActivityIndicator color="#26cb96" />
       </View>
     );
   }
 
+  // When in "spots" mode, show SpotsLoggedTab
+  if (mode === 'spots') {
+    return <SpotsLoggedTab onBack={() => setMode('profile')} />;
+  }
+
   const avatarUrl = getPublicAvatarUrl(profile.avatar_url);
-  console.log('avatar path:', profile.avatar_url);
-  console.log('avatar URL:', avatarUrl);
 
   return (
     <>
       <ProfileTab
         onLogout={handleLogout}
         onOpenSettings={() => setShowSettings(true)}
+        onOpenSpots={() => setMode('spots')}
         profile={{
           first_name: profile.first_name,
           last_name: profile.last_name,
@@ -117,7 +126,6 @@ export default function ProfileScreen() {
         profile={profile}
         onProfileUpdated={(updated) => {
           setProfile(updated);
-          // Reload profile to ensure fresh data
           loadProfile();
         }}
       />

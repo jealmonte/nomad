@@ -1,11 +1,12 @@
 // components/tabs/profile-tab.tsx
+import { RankedSpotCard, type RankedSpotCardProps } from '@/components/cards/ranked-spot-card';
+import { getCurrentUserId } from '@/lib/auth';
+import { supabase } from '@/lib/supabase';
 import { Feather } from '@expo/vector-icons';
 import * as SMS from 'expo-sms';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Alert, FlatList, Image, Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-
-import { RankedSpotCard, type RankedSpotCardProps } from '@/components/cards/ranked-spot-card';
 
 const images = {
   fushimi: require('@/assets/images/fushimi-inari-torii.jpg'),
@@ -58,9 +59,23 @@ const rankedSpots: RankedSpotCardProps[] = [
   },
 ];
 
+const SLOGAN = 'discover your perfect spots with AI-powered recommendations';
+
+async function handleShare(inviteCode: string) {
+  const isAvailable = await SMS.isAvailableAsync();
+  if (!isAvailable) {
+    Alert.alert('Not supported', 'SMS is not available on this device.');
+    return;
+  }
+
+  const message = `Join me on Nomad to ${SLOGAN}.\n\nUse my invite code: ${inviteCode}`;
+  await SMS.sendSMSAsync([], message);
+}
+
 type ProfileTabProps = {
   onLogout: () => void;
   onOpenSettings: () => void;
+  onOpenSpots?: () => void;
   profile: {
     first_name: string;
     last_name: string;
@@ -80,24 +95,53 @@ type ProfileTabProps = {
 type ListItem = { type: 'content'; id: 'content' };
 const listData: ListItem[] = [{ type: 'content', id: 'content' }];
 
-const SLOGAN = 'discover your perfect spots with AI-powered recommendations';
-
-async function handleShare(inviteCode: string) {
-  const isAvailable = await SMS.isAvailableAsync();
-  if (!isAvailable) {
-    Alert.alert('Not supported', 'SMS is not available on this device.');
-    return;
-  }
-
-  const message = `Join me on Nomad to ${SLOGAN}.\n\nUse my invite code: ${inviteCode}`;
-  await SMS.sendSMSAsync([], message);
-}
-
-export function ProfileTab({ onLogout, onOpenSettings, profile }: ProfileTabProps) {
-  console.log('ProfileTab avatar_url prop:', profile.avatar_url);
+export function ProfileTab({
+  onLogout,
+  onOpenSettings,
+  onOpenSpots,
+  profile,
+}: ProfileTabProps) {
   const fullName = `${profile.first_name} ${profile.last_name}`.trim();
   const handle = `@${profile.username}`;
   const inviteCode = `NOMAD-${profile.username.slice(0, 4).toUpperCase()}`;
+
+  const [spotCount, setSpotCount] = useState(0);
+  const [avgScore, setAvgScore] = useState(0);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      const userId = await getCurrentUserId();
+  
+      if (!userId) {
+        console.error('PROFILE stats: no auth user');
+        return;
+      }
+  
+      const { data: spotsRows, error: spotsError } = await supabase
+        .from('posts')
+        .select('id, auto_score')
+        .eq('user_id', userId);
+  
+      if (spotsError || !spotsRows) {
+        console.error('PROFILE stats error', spotsError);
+        return;
+      }
+  
+      setSpotCount(spotsRows.length);
+  
+      if (spotsRows.length > 0) {
+        const sum = spotsRows.reduce(
+          (acc: number, row: any) => acc + (row.auto_score ?? 0),
+          0,
+        );
+        setAvgScore(Number((sum / spotsRows.length).toFixed(1)));
+      } else {
+        setAvgScore(0);
+      }
+    };
+  
+    fetchStats();
+  }, []);
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={['top']}>
@@ -110,23 +154,28 @@ export function ProfileTab({ onLogout, onOpenSettings, profile }: ProfileTabProp
           <View className="bg-background py-3 border-b border-border">
             <View className="flex-row items-center justify-between">
               <View className="flex-row items-center gap-2">
-                {/* door logout button on the left */}
+                {/* Logout button */}
                 <Pressable
                   onPress={onLogout}
-                  className="h-10 w-10 rounded-full items-center justify-center bg-secondary">
+                  className="h-10 w-10 rounded-full items-center justify-center bg-secondary"
+                >
                   <Feather name="log-out" size={18} color="#fff" />
                 </Pressable>
-                <Text className="text-2xl font-bold tracking-tight text-foreground">Profile</Text>
+                <Text className="text-2xl font-bold tracking-tight text-foreground">
+                  Profile
+                </Text>
               </View>
               <View className="flex-row gap-2">
                 <Pressable
                   className="h-10 w-10 rounded-full items-center justify-center bg-secondary"
-                  onPress={() => handleShare(inviteCode)}>
+                  onPress={() => handleShare(inviteCode)}
+                >
                   <Feather name="share-2" size={18} color="#fff" />
                 </Pressable>
                 <Pressable
                   className="h-10 w-10 rounded-full items-center justify-center bg-secondary"
-                  onPress={onOpenSettings}>
+                  onPress={onOpenSettings}
+                >
                   <Feather name="settings" size={18} color="#fff" />
                 </Pressable>
               </View>
@@ -135,9 +184,9 @@ export function ProfileTab({ onLogout, onOpenSettings, profile }: ProfileTabProp
         }
         renderItem={() => (
           <View className="py-4 gap-6">
-            {/* Profile row: avatar left, text to the right */}
+            {/* Profile row */}
             <View className="flex-row items-center gap-4">
-            {profile.avatar_url ? (
+              {profile.avatar_url ? (
                 <Image
                   key={profile.avatar_url}
                   source={{ uri: profile.avatar_url }}
@@ -159,7 +208,7 @@ export function ProfileTab({ onLogout, onOpenSettings, profile }: ProfileTabProp
               </View>
             </View>
 
-            {/* Followers / following under profile info */}
+            {/* Followers / following */}
             <View className="flex-row gap-6">
               <Pressable className="items-center">
                 <Text className="text-lg font-bold text-foreground">
@@ -179,8 +228,13 @@ export function ProfileTab({ onLogout, onOpenSettings, profile }: ProfileTabProp
             <View className="flex-row flex-wrap gap-3">
               <StatCard icon="globe" label="Countries" value={profile.countries} />
               <StatCard icon="map-pin" label="Cities" value={profile.cities} />
-              <StatCard icon="star" label="Spots Logged" value={profile.spots} />
-              <StatCard icon="users" label="Avg Score" value={profile.avgScore} />
+
+              {/* Spots Logged – tap to open SpotsLoggedTab */}
+              <Pressable onPress={onOpenSpots}>
+                <StatCard icon="star" label="Spots Logged" value={spotCount} />
+              </Pressable>
+
+              <StatCard icon="users" label="Avg Score" value={avgScore} />
             </View>
 
             {/* Taste profile tags */}
@@ -188,7 +242,7 @@ export function ProfileTab({ onLogout, onOpenSettings, profile }: ProfileTabProp
               <Text className="text-sm font-semibold text-muted-foreground mb-2">
                 TASTE PROFILE
               </Text>
-              <View className="flex-row realitat flex-wrap gap-2">
+              <View className="flex-row flex-wrap gap-2">
                 {profile.topTags.map((tag) => (
                   <View key={tag} className="bg-secondary rounded-full px-3 py-1">
                     <Text className="text-secondary-foreground text-xs">{tag}</Text>
@@ -214,7 +268,9 @@ export function ProfileTab({ onLogout, onOpenSettings, profile }: ProfileTabProp
               <View className="flex-row items-center justify-between">
                 <View>
                   <Text className="font-semibold text-foreground">Invite Friends</Text>
-                  <Text className="text-sm text-muted-foreground">Share your invite code</Text>
+                  <Text className="text-sm text-muted-foreground">
+                    Share your invite code
+                  </Text>
                 </View>
                 <Pressable className="rounded-full bg-secondary px-3 py-2">
                   <Text className="text-secondary-foreground font-semibold">
