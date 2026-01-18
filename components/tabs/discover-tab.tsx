@@ -6,6 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { DiscoverCard, type DiscoverCardProps } from '@/components/cards/discover-card';
 import { getLucky } from '@/services/woodwide';
+import * as Localization from 'expo-localization';
 
 const tags = ['temples', 'nightlife', 'coffee', 'beaches', 'nature', 'food', 'museums', 'markets'];
 
@@ -81,10 +82,26 @@ const recommendations: DiscoverCardProps[] = [
   },
 ];
 
+const locale = Localization.getLocales()[0];
+const region = locale?.regionCode;
+
+const locationLabel = (() => {
+  if (region === 'US') return 'Near Pittsburgh, PA';
+  if (!region) return 'Near you';
+
+  const name =
+    typeof Intl !== 'undefined' && (Intl as any).DisplayNames
+      ? new Intl.DisplayNames([locale?.languageTag ?? 'en'], { type: 'region' }).of(region)
+      : region;
+
+  return `Near ${name ?? region}`;
+})();
+
+
 export function DiscoverTab() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
-  
+
   // 2. Add state for the Get Lucky feature
   const [isLuckyLoading, setIsLuckyLoading] = useState(false);
   const [luckySpot, setLuckySpot] = useState<any>(null);
@@ -113,7 +130,7 @@ export function DiscoverTab() {
 
       setLuckySpot({
         ...spot,
-        image: images[randomImageKey], 
+        image: images[randomImageKey],
         matchReason: `AI Match: ${displayScore}%`,
         distance: typeof spot.distance === 'number' ? `${spot.distance} km` : spot.distance,
       });
@@ -195,7 +212,7 @@ export function DiscoverTab() {
             return (
               <View className="pt-4">
                 {/* 4. Update the Button to be interactive */}
-                <Pressable 
+                <Pressable
                   onPress={handleGetLucky}
                   disabled={isLuckyLoading}
                   className={`w-full rounded-xl h-14 items-center justify-center flex-row ${isLuckyLoading ? 'bg-primary/80' : 'bg-primary'}`}
@@ -214,7 +231,7 @@ export function DiscoverTab() {
 
                 <View className="py-3 flex-row items-center gap-2">
                   <Feather name="map-pin" size={16} color="#33d6b3" />
-                  <Text className="text-sm text-muted-foreground">Near Tokyo, Japan</Text>
+                  <Text className="text-sm text-muted-foreground">{locationLabel}</Text>
                 </View>
 
                 <Text className="text-lg font-semibold text-foreground mb-3">Recommended for You</Text>
@@ -235,41 +252,41 @@ export function DiscoverTab() {
                 <Feather name="x" size={24} color="#fff" />
               </Pressable>
             </View>
-            
+
             <Text className="text-muted-foreground mb-6">
               Our AI analyzed your history and thinks you will love this:
             </Text>
 
             {luckySpot && (
               <View className="bg-card border border-border rounded-2xl overflow-hidden mb-6">
-                 {/* Image Placeholder or Actual Image */}
-                 <Image source={luckySpot.image} className="w-full h-48" resizeMode="cover" />
-                 
-                 <View className="p-4">
-                    <View className="flex-row justify-between items-start mb-2">
-                        <Text className="text-xl font-bold text-foreground flex-1 mr-2">{luckySpot.name}</Text>
-                        <View className="bg-green-100 dark:bg-green-900 px-2 py-1 rounded">
-                            <Text className="text-green-700 dark:text-green-300 font-bold text-xs">{luckySpot.aiScore}</Text>
-                        </View>
-                    </View>
-                    
-                    <Text className="text-muted-foreground mb-3">{luckySpot.location} • {luckySpot.distance}</Text>
-                    
-                    <View className="bg-purple-100 dark:bg-purple-900/30 self-start px-3 py-1.5 rounded-lg mb-4 flex-row items-center">
-                      <MaterialIcons name="auto-awesome" size={14} color="#a855f7" />
-                      <Text className="text-purple-700 dark:text-purple-300 text-xs font-semibold ml-1">{luckySpot.matchReason}</Text>
-                    </View>
+                {/* Image Placeholder or Actual Image */}
+                <Image source={luckySpot.image} className="w-full h-48" resizeMode="cover" />
 
-                    <View className="flex-row flex-wrap gap-2">
-                        {luckySpot.tags && luckySpot.tags.map((t: string) => (
-                            <Text key={t} className="text-xs text-muted-foreground bg-secondary px-2 py-1 rounded">#{t}</Text>
-                        ))}
+                <View className="p-4">
+                  <View className="flex-row justify-between items-start mb-2">
+                    <Text className="text-xl font-bold text-foreground flex-1 mr-2">{luckySpot.name}</Text>
+                    <View className="bg-green-100 dark:bg-green-900 px-2 py-1 rounded">
+                      <Text className="text-green-700 dark:text-green-300 font-bold text-xs">{luckySpot.aiScore}</Text>
                     </View>
-                 </View>
+                  </View>
+
+                  <Text className="text-muted-foreground mb-3">{luckySpot.location} • {luckySpot.distance}</Text>
+
+                  <View className="bg-purple-100 dark:bg-purple-900/30 self-start px-3 py-1.5 rounded-lg mb-4 flex-row items-center">
+                    <MaterialIcons name="auto-awesome" size={14} color="#a855f7" />
+                    <Text className="text-purple-700 dark:text-purple-300 text-xs font-semibold ml-1">{luckySpot.matchReason}</Text>
+                  </View>
+
+                  <View className="flex-row flex-wrap gap-2">
+                    {luckySpot.tags && luckySpot.tags.map((t: string) => (
+                      <Text key={t} className="text-xs text-muted-foreground bg-secondary px-2 py-1 rounded">#{t}</Text>
+                    ))}
+                  </View>
+                </View>
               </View>
             )}
 
-            <Pressable 
+            <Pressable
               onPress={() => setLuckySpot(null)}
               className="w-full bg-primary h-14 rounded-xl items-center justify-center"
             >
