@@ -46,19 +46,24 @@ const safeBase64 = (str: string) => {
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-const TOKYO_SPOTS = [
-  { name: "Senso-ji Temple", type: "temples", desc: "Ancient Buddhist temple", duration: "2h", cost: "Free", baseScore: 9.0 },
-  { name: "Nakamise St.", type: "shopping", desc: "Shopping street", duration: "1.5h", cost: "$$", baseScore: 8.5 },
-  { name: "Izakaya Dinner", type: "food", desc: "Local pub food", duration: "2h", cost: "$$", baseScore: 9.2 },
-  { name: "TeamLab Planets", type: "art", desc: "Digital art museum", duration: "3h", cost: "$$$", baseScore: 9.5 },
-  { name: "Shibuya Crossing", type: "sightseeing", desc: "Famous crossing", duration: "1h", cost: "Free", baseScore: 8.8 },
-  { name: "Yoyogi Park", type: "nature", desc: "Large city park", duration: "2h", cost: "Free", baseScore: 8.9 },
-  { name: "Harajuku", type: "shopping", desc: "Youth fashion", duration: "3h", cost: "$$", baseScore: 8.2 },
-  { name: "Tsukiji Market", type: "food", desc: "Fresh seafood breakfast", duration: "2h", cost: "$$", baseScore: 9.3 },
-  { name: "Meiji Shrine", type: "temples", desc: "Forest shrine", duration: "1.5h", cost: "Free", baseScore: 9.1 },
-  { name: "Golden Gai", type: "nightlife", desc: "Tiny bars alley", duration: "3h", cost: "$$", baseScore: 8.7 },
-  { name: "Akihabara", type: "shopping", desc: "Electronics & Anime", duration: "3h", cost: "$$", baseScore: 8.0 },
+const NYC_SPOTS = [
+  { name: "The Cloisters", type: "museums", desc: "Medieval art in fort garden", duration: "3h", cost: "$$", baseScore: 9.1 },
+  { name: "Green-Wood Cemetery", type: "nature", desc: "Historic cemetery park with views", duration: "2.5h", cost: "Free", baseScore: 8.7 },
+  { name: "City Island", type: "food", desc: "Nautical village with seafood", duration: "4h", cost: "$$", baseScore: 8.5 },
+  { name: "Governor's Island", type: "nature", desc: "Car-free island retreat", duration: "3h", cost: "$", baseScore: 8.9 },
+  { name: "Brooklyn Bridge", type: "sightseeing", desc: "Iconic suspension bridge walk", duration: "2h", cost: "Free", baseScore: 9.3 },
+  { name: "Statue of Liberty", type: "sightseeing", desc: "National monument symbol", duration: "4h", cost: "$$", baseScore: 9.4 },
+  { name: "Arthur Avenue", type: "food", desc: "Real Little Italy in the Bronx", duration: "2.5h", cost: "$$", baseScore: 8.8 },
+  { name: "Wave Hill", type: "nature", desc: "Botanical garden with Hudson views", duration: "2h", cost: "$", baseScore: 8.6 },
+  { name: "Roosevelt Island Tramway", type: "sightseeing", desc: "Aerial tram with skyline views", duration: "1.5h", cost: "$", baseScore: 8.4 },
+  { name: "Grand Central Terminal", type: "sightseeing", desc: "Beaux-Arts train station landmark", duration: "1.5h", cost: "Free", baseScore: 9.0 },
+  { name: "Noguchi Museum", type: "museums", desc: "Sculptor's peaceful studio garden", duration: "2h", cost: "$$", baseScore: 8.3 },
+  { name: "Queens Night Market", type: "food", desc: "Global street food festival", duration: "3h", cost: "$$", baseScore: 8.9 },
+  { name: "Fort Tilden Beach", type: "nature", desc: "Secluded urban beach escape", duration: "3h", cost: "Free", baseScore: 8.2 },
+  { name: "Ellis Island", type: "museums", desc: "Immigration history museum", duration: "3h", cost: "$$", baseScore: 9.2 },
+  { name: "Brooklyn Grange Rooftop Farm", type: "nature", desc: "Urban farm with Manhattan views", duration: "1.5h", cost: "$", baseScore: 8.1 },
 ];
+
 
 // Helper: CSV Generator
 const arrayToCsv = (data: any[], columns: string[]) => {
@@ -87,10 +92,9 @@ function getDistanceFromLatLonInKm(lat1: number, lon1: number, lat2: number, lon
 }
 
 // Helper: Map DB Row to AI Training Format
-// Current Location hardcoded to Tokyo Station (35.6812, 139.7671) for demo purposes
 function mapSupabaseToAiFormat(rows: SupabaseSpot[]) {
-  const CURRENT_LAT = 35.6812;
-  const CURRENT_LON = 139.7671;
+  const CURRENT_LAT = 40.7580;
+  const CURRENT_LON = -73.9855;
 
   return rows.map(row => {
     // Combine category + keywords from reflection for "tags"
@@ -130,23 +134,25 @@ export async function getLucky() {
 
   // --- 1. HISTORY DATA (TRAINING) ---
   // Structured exactly like your Supabase Table
-  const mockDbHistory: SupabaseSpot[] = [
-      { id: "1", user_id: "u1", name: "Tsukiji Outer Market", category: "food", city: "Tokyo", country: "Japan", latitude: 35.6655, longitude: 139.7706, price_range: 2, visit_date: "2023-10-01", reflection: "Amazing fresh sushi breakfast markets", auto_score: 9.1, reasoning: null },
-      { id: "2", user_id: "u1", name: "Golden Gai", category: "nightlife", city: "Shinjuku", country: "Japan", latitude: 35.6943, longitude: 139.7028, price_range: 3, visit_date: "2023-10-02", reflection: "Too crowded small bars authentic", auto_score: 8.9, reasoning: null },
-      { id: "3", user_id: "u1", name: "Meiji Shrine", category: "temples", city: "Shibuya", country: "Japan", latitude: 35.6764, longitude: 139.6993, price_range: 1, visit_date: "2023-10-03", reflection: "Peaceful nature forest beautiful", auto_score: 8.8, reasoning: null },
-      { id: "4", user_id: "u1", name: "Robot Restaurant", category: "entertainment", city: "Shinjuku", country: "Japan", latitude: 35.6943, longitude: 139.7028, price_range: 4, visit_date: "2023-10-04", reflection: "Loud tourist trap expensive", auto_score: 6.5, reasoning: null },
-      { id: "5", user_id: "u1", name: "Senso-ji Temple", category: "temples", city: "Asakusa", country: "Japan", latitude: 35.7148, longitude: 139.7967, price_range: 1, visit_date: "2023-10-05", reflection: "Historic crowded lanterns markets", auto_score: 8.7, reasoning: null },
-  ];
+const mockDbHistory: SupabaseSpot[] = [
+    { id: "1", user_id: "u1", name: "Arthur Avenue", category: "food", city: "Bronx", country: "USA", latitude: 40.8551, longitude: -73.8876, price_range: 2, visit_date: "2025-11-15", reflection: "Authentic Italian cannoli fresh markets", auto_score: 8.8, reasoning: null },
+    { id: "2", user_id: "u1", name: "Dead Rabbit", category: "nightlife", city: "Manhattan", country: "USA", latitude: 40.7033, longitude: -74.0115, price_range: 3, visit_date: "2025-11-16", reflection: "Historic Irish pub craft cocktails cozy", auto_score: 8.6, reasoning: null },
+    { id: "3", user_id: "u1", name: "The Cloisters", category: "museums", city: "Manhattan", country: "USA", latitude: 40.8649, longitude: -73.9318, price_range: 2, visit_date: "2025-11-17", reflection: "Peaceful medieval art stunning gardens", auto_score: 9.1, reasoning: null },
+    { id: "4", user_id: "u1", name: "Ripley's Times Square", category: "entertainment", city: "Manhattan", country: "USA", latitude: 40.7580, longitude: -73.9855, price_range: 4, visit_date: "2025-11-18", reflection: "Tourist trap overpriced cheesy exhibits", auto_score: 6.3, reasoning: null },
+    { id: "5", user_id: "u1", name: "Brooklyn Bridge", category: "sightseeing", city: "Brooklyn", country: "USA", latitude: 40.7061, longitude: -73.9969, price_range: 1, visit_date: "2025-11-19", reflection: "Iconic views sunrise beautiful walkway", auto_score: 9.3, reasoning: null },
+];
+
 
   // --- 2. CANDIDATE DATA (INFERENCE) ---
   // New places structured like Supabase Table
-  const mockDbCandidates: SupabaseSpot[] = [
-      { id: "101", user_id: "u1", name: "Ghibli Museum", category: "museums", city: "Mitaka", country: "Japan", latitude: 35.6962, longitude: 139.5704, price_range: 2, visit_date: "", reflection: "whimsical art animation", auto_score: 9.6, reasoning: null },
-      { id: "102", user_id: "u1", name: "Yoyogi Park", category: "nature", city: "Shibuya", country: "Japan", latitude: 35.6717, longitude: 139.6949, price_range: 1, visit_date: "", reflection: "picnic peaceful green", auto_score: 9.0, reasoning: null },
-      { id: "103", user_id: "u1", name: "Omoide Yokocho", category: "nightlife", city: "Shinjuku", country: "Japan", latitude: 35.6930, longitude: 139.6995, price_range: 2, visit_date: "", reflection: "crowded food yakitori", auto_score: 8.5, reasoning: null },
-      { id: "104", user_id: "u1", name: "Nezu Museum", category: "museums", city: "Minato", country: "Japan", latitude: 35.6620, longitude: 139.7200, price_range: 3, visit_date: "", reflection: "garden quiet architecture", auto_score: 6.2, reasoning: null },
-      { id: "105", user_id: "u1", name: "Shibuya Crossing", category: "city", city: "Shibuya", country: "Japan", latitude: 35.6595, longitude: 139.7004, price_range: 1, visit_date: "", reflection: "iconic crowded busy", auto_score: 8.0, reasoning: null },
-  ];
+const mockDbCandidates: SupabaseSpot[] = [
+    { id: "101", user_id: "u1", name: "Governor's Island", category: "nature", city: "Manhattan", country: "USA", latitude: 40.6890, longitude: -74.0200, price_range: 1, visit_date: "", reflection: "peaceful biking carfree historic", auto_score: 8.9, reasoning: null },
+    { id: "102", user_id: "u1", name: "Green-Wood Cemetery", category: "nature", city: "Brooklyn", country: "USA", latitude: 40.6565, longitude: -73.9947, price_range: 1, visit_date: "", reflection: "historic sculptures panoramic peaceful", auto_score: 8.7, reasoning: null },
+    { id: "103", user_id: "u1", name: "Queens Night Market", category: "food", city: "Queens", country: "USA", latitude: 40.7460, longitude: -73.8467, price_range: 2, visit_date: "", reflection: "diverse vendors global flavors crowded", auto_score: 8.9, reasoning: null },
+    { id: "104", user_id: "u1", name: "Noguchi Museum", category: "museums", city: "Queens", country: "USA", latitude: 40.7677, longitude: -73.9398, price_range: 2, visit_date: "", reflection: "tranquil sculptures garden minimalist", auto_score: 8.3, reasoning: null },
+    { id: "105", user_id: "u1", name: "Statue of Liberty", category: "sightseeing", city: "Manhattan", country: "USA", latitude: 40.6892, longitude: -74.0445, price_range: 2, visit_date: "", reflection: "iconic monument ferry views historic", auto_score: 9.4, reasoning: null },
+];
+
 
   // Convert to AI Format
   const historyFormatted = mapSupabaseToAiFormat(mockDbHistory);
@@ -319,9 +325,8 @@ export async function generateItinerary(
   await sleep(2500);
 
   // 2. FILTER & SCORE LOGIC (Simulating AI Personalization)
-  // In a real app, this is where we'd send user_id to woodwide.ai
-  
-  const scoredSpots = TOKYO_SPOTS.map(spot => {
+  // In a real app, this is where we'd send user_id to woodwide.ai 
+  const scoredSpots = NYC_SPOTS.map(spot => {
     let score = spot.baseScore;
     
     // Boost score if it matches user interests
@@ -345,8 +350,8 @@ export async function generateItinerary(
   const itinerary: ItineraryDay[] = [];
   let spotIndex = 0;
 
-  const dayTitles = ["Arrival & Culture", "Modern Vibes", "Nature & Chill", "Hidden Gems", "Last Hurrah"];
-  const timeSlots = ["10:00 AM", "1:00 PM", "4:00 PM", "7:00 PM"];
+  const dayTitles = ["Hidden Gems & Culture", "Landmarks & History", "Outer Boroughs", "Waterfront Adventures", "Local Favorites"];
+  const timeSlots = ["9:00 AM", "1:00 PM", "4:00 PM", "7:00 PM"];
 
   for (let i = 1; i <= days; i++) {
     const dayActivities: ItineraryActivity[] = [];

@@ -18,7 +18,7 @@ import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { generateItinerary, ItineraryDay } from '@/services/woodwide';
 
-const HEADER_IMAGE_URL = 'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?auto=format&fit=crop&w=800&q=80';
+const HEADER_IMAGE_URL = 'https://images.unsplash.com/photo-1602940659805-770d1b3b9911?q=80&w=1332&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D';
 
 interface GeneratedItinerarySheetProps {
   open: boolean;
@@ -212,7 +212,7 @@ export function GeneratedItinerarySheet({ open, onOpenChange, destination, start
           <Animated.View entering={FadeIn.duration(500)} className="flex-1">
             {/* Header */}
             <View className="h-48 relative bg-muted">
-              <Image source={{ uri: 'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf' }} className="w-full h-full" resizeMode="cover" />
+              <Image source={{ uri: 'https://images.unsplash.com/photo-1602940659805-770d1b3b9911?q=80&w=1332&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D' }} className="w-full h-full" resizeMode="cover" />
               <View className="absolute inset-0 bg-black/40 p-6 justify-end">
                 <View className="flex-row items-center gap-2 mb-1">
                     <MaterialIcons name="auto-awesome" size={16} color="#33d6b3" />
