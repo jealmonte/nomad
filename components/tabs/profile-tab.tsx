@@ -110,6 +110,13 @@ export function ProfileTab({
 
   const [spotCount, setSpotCount] = useState(0);
   const [avgScore, setAvgScore] = useState(0);
+  const [derivedCountries, setDerivedCountries] = useState(0);
+  const [derivedCities, setDerivedCities] = useState(0);
+
+  const [tooltip, setTooltip] = useState<{
+    label: string;
+    message: string;
+  } | null>(null);
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -120,31 +127,60 @@ export function ProfileTab({
         return;
       }
 
-      const { data: spotsRows, error: spotsError } = await supabase
-        .from("posts")
-        .select("id, auto_score")
-        .eq("user_id", userId);
+      const { data, error } = await supabase
+        .from('posts')
+        .select(
+          `
+          id,
+          auto_score,
+          spot:spot_id (
+            city,
+            country
+          )
+        `,
+        )
+        .eq('user_id', userId);
 
-      if (spotsError || !spotsRows) {
-        console.error("PROFILE stats error", spotsError);
+      if (error || !data) {
+        console.error('PROFILE stats error', error);
         return;
       }
 
-      setSpotCount(spotsRows.length);
+      setSpotCount(data.length);
 
-      if (spotsRows.length > 0) {
-        const sum = spotsRows.reduce(
+      if (data.length > 0) {
+        const sum = data.reduce(
           (acc: number, row: any) => acc + (row.auto_score ?? 0),
           0,
         );
-        setAvgScore(Number((sum / spotsRows.length).toFixed(1)));
+        setAvgScore(Number((sum / data.length).toFixed(1)));
       } else {
         setAvgScore(0);
       }
+
+      const countrySet = new Set<string>();
+      const citySet = new Set<string>();
+
+      data.forEach((row: any) => {
+        const country = row.spot?.country?.trim();
+        const city = row.spot?.city?.trim();
+
+        if (country) countrySet.add(country);
+        if (city) citySet.add(city);
+      });
+
+      setDerivedCountries(countrySet.size);
+      setDerivedCities(citySet.size);
     };
 
     fetchStats();
   }, []);
+
+  useEffect(() => {
+    if (!tooltip) return;
+    const id = setTimeout(() => setTooltip(null), 3000);
+    return () => clearTimeout(id);
+  }, [tooltip]);
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={["top"]}>
@@ -232,41 +268,67 @@ export function ProfileTab({
             </View>
 
             {/* Stat cards */}
-           <View style={{ gap: 12 }}>
-        {/* Row 1: Countries and Cities */}
-            <View style={{ flexDirection: 'row', gap: 12 }}>
-              <View style={{ flex: 1}}>
-                <StatCard
-                  icon="globe"
-                  label="Countries"
-                  value={profile.countries}
-                />
-              </View>
-              <View style={{ flex: 1 }}>
-                <StatCard 
-                  icon="map-pin" 
-                  label="Cities" 
-                  value={profile.cities} 
-                />
-              </View>
-            </View>
+            <View className="flex-row flex-wrap gap-3">
+              <StatCard
+                icon="globe"
+                label="Countries"
+                value={derivedCountries}
+                onPress={() =>
+                  setTooltip((current) =>
+                    current?.label === 'Countries'
+                      ? null
+                      : {
+                          label: 'Countries',
+                          message:
+                            'Unique countries where you have logged at least one spot.',
+                        },
+                  )
+                }
+                tooltip={tooltip?.label === 'Countries' ? tooltip.message : undefined}
+              />
 
-            {/* Row 2: Spots Logged and Avg Score */}
-            <View style={{ flexDirection: 'row', gap: 12 }}>
-              <Pressable onPress={onOpenSpots} style={{ flex: 1 }}>
-                <StatCard
-                  icon="star"
-                  label="Spots Logged"
-                  value={spotCount}
-                />
-              </Pressable>
-              <View style={{ flex: 1 }}>
-                <StatCard 
-                  icon="users" 
-                  label="Avg Score" 
-                  value={avgScore} 
-                />
-              </View>
+              <StatCard
+                icon="map-pin"
+                label="Cities"
+                value={derivedCities}
+                onPress={() =>
+                  setTooltip((current) =>
+                    current?.label === 'Cities'
+                      ? null
+                      : {
+                          label: 'Cities',
+                          message:
+                            'Unique cities where you have logged at least one spot.',
+                        },
+                  )
+                }
+                tooltip={tooltip?.label === 'Cities' ? tooltip.message : undefined}
+              />
+
+              {/* Spots Logged – tap to open SpotsLoggedTab */}
+              <StatCard
+                icon="star"
+                label="Spots Logged"
+                value={spotCount}
+                onPress={onOpenSpots}
+              />
+            <StatCard
+              icon="users"
+              label="Avg Score"
+              value={avgScore}
+              onPress={() =>
+                setTooltip((current) =>
+                  current?.label === 'Avg Score'
+                    ? null
+                    : {
+                        label: 'Avg Score',
+                        message: 'Average AI score across all spots you have logged.',
+                      },
+                )
+              }
+              tooltip={tooltip?.label === 'Avg Score' ? tooltip.message : undefined}
+              tooltipPosition="bottom"
+            />
             </View>
           </View>
 
@@ -330,22 +392,51 @@ function StatCard({
   icon,
   label,
   value,
+  onPress,
+  tooltip,
+  tooltipPosition,
 }: {
   icon: keyof typeof Feather.glyphMap;
   label: string;
   value: number;
+  onPress?: () => void;
+  tooltip?: string;
+  tooltipPosition?: 'top' | 'bottom'
 }) {
+  const Wrapper: React.ComponentType<any> = onPress ? Pressable : View;
+  const wrapperProps = onPress ? { onPress } : {};
+
+  const isBottom = tooltipPosition === 'bottom';
+
   return (
-    <View className="bg-card border border-border rounded-xl p-4 w-[100%]">
-      <View className="flex-row items-center gap-3">
-        <View className="h-10 w-10 rounded-full bg-primary/10 items-center justify-center">
-          <Feather name={icon} size={18} color="#33d6b3" />
+    <View className="w-[48%] relative">
+      <Wrapper {...wrapperProps}>
+        <View className="bg-card border border-border rounded-xl p-4 w-full min-h-[80px]">
+          <View className="flex-row items-center gap-3">
+            <View className="h-10 w-10 rounded-full bg-primary/10 items-center justify-center">
+              <Feather name={icon} size={18} color="#33d6b3" />
+            </View>
+            <View>
+              <Text className="text-2xl font-bold text-foreground">{value}</Text>
+              <Text className="text-xs text-muted-foreground">{label}</Text>
+            </View>
+          </View>
         </View>
-        <View>
-          <Text className="text-2xl font-bold text-foreground">{value}</Text>
-          <Text className="text-xs text-muted-foreground">{label}</Text>
+      </Wrapper>
+
+      {tooltip ? (
+        <View
+          className={[
+            'px-3 py-2 rounded-lg bg-card border border-border flex-row items-center shadow-lg',
+            isBottom
+              ? 'absolute -bottom-2 left-1/2 -translate-x-1/2 translate-y-full'
+              : 'absolute -top-2 left-1/2 -translate-x-1/2 -translate-y-full',
+          ].join(' ')}
+        >
+          <View className="mr-2 h-2 w-2 rounded-full bg-primary" />
+          <Text className="text-xs text-muted-foreground flex-1">{tooltip}</Text>
         </View>
-      </View>
+      ) : null}
     </View>
   );
 }

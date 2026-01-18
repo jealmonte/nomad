@@ -1,3 +1,4 @@
+// components/tabs/spots-logged-tab.tsx
 import { Feather } from '@expo/vector-icons';
 import { useEffect, useMemo, useState } from 'react';
 import {
@@ -12,6 +13,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Colors } from '@/constants/theme';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 import { getCurrentUserId } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 
@@ -37,42 +39,44 @@ type Props = {
 };
 
 export function SpotsLoggedTab({ onBack }: Props) {
-  const theme: 'light' | 'dark' = 'light'; // simple for now; you can wire useColorScheme if you want
+  const colorScheme = useColorScheme() ?? 'dark';
+  const theme: 'light' | 'dark' = colorScheme;
 
   const [spots, setSpots] = useState<LoggedSpotRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [sortMode, setSortMode] = useState<SortMode>('recent');
   const [search, setSearch] = useState('');
+  const [sortMenuOpen, setSortMenuOpen] = useState(false);
 
   // Fetch all posts + spots for this user
   useEffect(() => {
     const fetchSpots = async () => {
       setLoading(true);
       const userId = await getCurrentUserId();
-        if (!userId) {
+      if (!userId) {
         console.error('SPOTS LOGGED: no auth user');
         setSpots([]);
         setLoading(false);
         return;
-        }
+      }
 
       const { data, error } = await supabase
         .from('posts')
         .select(
           `
-            id,
-            auto_score,
-            reflection,
-            photos_count,
-            created_at,
-            spot:spot_id (
-              name,
-              city,
-              country,
-              category,
-              image_url
-            )
-          `
+          id,
+          auto_score,
+          reflection,
+          photos_count,
+          created_at,
+          spot:spot_id (
+            name,
+            city,
+            country,
+            category,
+            image_url
+          )
+        `,
         )
         .eq('user_id', userId)
         .order('created_at', { ascending: false });
@@ -81,7 +85,6 @@ export function SpotsLoggedTab({ onBack }: Props) {
         console.error('SPOTS LOGGED error', error);
         setSpots([]);
       } else {
-        // Fix data shape: Supabase may return spot as array if any relationship is many-to-one by mistake
         const normalized = (data as any[]).map((row) => ({
           ...row,
           spot: Array.isArray(row.spot) ? row.spot[0] ?? null : row.spot ?? null,
@@ -90,11 +93,12 @@ export function SpotsLoggedTab({ onBack }: Props) {
       }
       setLoading(false);
     };
-    fetchSpots();
-    }, []);
 
-    const filtered = useMemo(() => {
-      const q = search.trim().toLowerCase();
+    fetchSpots();
+  }, []);
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
 
     let list = spots;
     if (q.length > 0) {
@@ -122,7 +126,7 @@ export function SpotsLoggedTab({ onBack }: Props) {
   const renderItem = ({ item }: { item: LoggedSpotRow }) => {
     const name = item.spot?.name ?? 'Unknown spot';
     const city = item.spot?.city ?? '';
-    const country = item.spot?.country ?? '';
+       const country = item.spot?.country ?? '';
     const location = [city, country].filter(Boolean).join(', ');
     const score = item.auto_score ?? 0;
     const imageUrl = item.spot?.image_url || undefined;
@@ -139,7 +143,7 @@ export function SpotsLoggedTab({ onBack }: Props) {
           overflow: 'hidden',
         }}
       >
-        {/* Header: name + created_at */}
+        {/* Header: name + created_at + score */}
         <View
           style={{
             flexDirection: 'row',
@@ -152,7 +156,7 @@ export function SpotsLoggedTab({ onBack }: Props) {
               style={{
                 fontSize: 16,
                 fontWeight: '600',
-                color: '#f8f8f8',
+                color: Colors[theme].text,
               }}
               numberOfLines={1}
             >
@@ -162,7 +166,7 @@ export function SpotsLoggedTab({ onBack }: Props) {
               <Text
                 style={{
                   fontSize: 12,
-                  color: '#8f8f8f',
+                  color: Colors[theme].icon,
                   marginTop: 2,
                 }}
                 numberOfLines={1}
@@ -173,7 +177,7 @@ export function SpotsLoggedTab({ onBack }: Props) {
           </View>
           <View
             style={{
-              backgroundColor: '#181b1f',
+              backgroundColor: Colors[theme].background,
               paddingHorizontal: 8,
               paddingVertical: 4,
               borderRadius: 999,
@@ -193,7 +197,7 @@ export function SpotsLoggedTab({ onBack }: Props) {
         </View>
 
         {/* Image */}
-        <View style={{ backgroundColor: '#181b1f' }}>
+        <View style={{ backgroundColor: '#0f1216' }}>
           {imageUrl ? (
             <Image
               source={{ uri: imageUrl }}
@@ -205,12 +209,12 @@ export function SpotsLoggedTab({ onBack }: Props) {
               style={{
                 width: '100%',
                 height: 200,
-                backgroundColor: '#181b1f',
+                backgroundColor: Colors[theme].background,
                 alignItems: 'center',
                 justifyContent: 'center',
               }}
             >
-              <Feather name="image" size={24} color="#8f8f8f" />
+              <Feather name="image" size={24} color={Colors[theme].icon} />
             </View>
           )}
         </View>
@@ -220,7 +224,7 @@ export function SpotsLoggedTab({ onBack }: Props) {
           {item.reflection && item.reflection.length > 0 && (
             <Text
               style={{
-                color: '#f8f8f8',
+                color: Colors[theme].text,
                 fontSize: 14,
                 marginBottom: 8,
               }}
@@ -236,10 +240,10 @@ export function SpotsLoggedTab({ onBack }: Props) {
               alignItems: 'center',
             }}
           >
-            <Text style={{ color: '#8f8f8f', fontSize: 12 }}>
+            <Text style={{ color: Colors[theme].icon, fontSize: 12 }}>
               {photosCount} photos
             </Text>
-            <Text style={{ color: '#8f8f8f', fontSize: 12 }}>
+            <Text style={{ color: Colors[theme].icon, fontSize: 12 }}>
               {item.created_at
                 ? new Date(item.created_at).toLocaleDateString()
                 : ''}
@@ -272,6 +276,7 @@ export function SpotsLoggedTab({ onBack }: Props) {
             alignItems: 'center',
             justifyContent: 'center',
             marginRight: 8,
+            backgroundColor: '#0f1216',
           }}
         >
           <Feather name="arrow-left" size={20} color={Colors[theme].text} />
@@ -295,8 +300,10 @@ export function SpotsLoggedTab({ onBack }: Props) {
           paddingHorizontal: 16,
           paddingVertical: 8,
           gap: 8,
+          zIndex: 10,
         }}
       >
+        {/* Search */}
         <View
           style={{
             flex: 1,
@@ -322,30 +329,115 @@ export function SpotsLoggedTab({ onBack }: Props) {
           />
         </View>
 
-        <Pressable
-          onPress={() =>
-            setSortMode((prev) => (prev === 'recent' ? 'alpha' : 'recent'))
-          }
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            paddingHorizontal: 10,
-            paddingVertical: 8,
-            borderRadius: 999,
-            backgroundColor: '#181b1f',
-          }}
-        >
-          <Text
+        {/* Sort dropdown */}
+        <View style={{ position: 'relative', zIndex: 20 }}>
+          <Pressable
+            onPress={() => setSortMenuOpen((open) => !open)}
             style={{
-              color: Colors[theme].text,
-              fontSize: 12,
-              marginRight: 4,
+              flexDirection: 'row',
+              alignItems: 'center',
+              paddingHorizontal: 10,
+              paddingVertical: 8,
+              borderRadius: 999,
+              backgroundColor: '#181b1f',
             }}
           >
-            {sortMode === 'recent' ? 'Recent' : 'A–Z'}
-          </Text>
-          <Feather name="chevron-down" size={14} color={Colors[theme].icon} />
-        </Pressable>
+            <Text
+              style={{
+                color: Colors[theme].text,
+                fontSize: 12,
+                marginRight: 4,
+              }}
+            >
+              {sortMode === 'recent' ? 'Recent' : 'A–Z'}
+            </Text>
+            <Feather
+              name={sortMenuOpen ? 'chevron-up' : 'chevron-down'}
+              size={14}
+              color={Colors[theme].icon}
+            />
+          </Pressable>
+
+          {sortMenuOpen && (
+            <View
+              style={{
+                position: 'absolute',
+                top: 40,
+                right: 0,
+                minWidth: 120,
+                borderRadius: 12,
+                backgroundColor: '#181b1f',
+                borderWidth: 1,
+                borderColor: '#26292e',
+                shadowColor: '#000',
+                shadowOpacity: 0.3,
+                shadowRadius: 8,
+                elevation: 8,
+                zIndex: 30,
+              }}
+            >
+              <Pressable
+                onPress={() => {
+                  setSortMode('recent');
+                  setSortMenuOpen(false);
+                }}
+                style={{
+                  paddingHorizontal: 12,
+                  paddingVertical: 8,
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                }}
+              >
+                <Text
+                  style={{
+                    color: Colors[theme].text,
+                    fontSize: 13,
+                    flex: 1,
+                  }}
+                >
+                  Recent
+                </Text>
+                {sortMode === 'recent' && (
+                  <Feather name="check" size={14} color="#26cb96" />
+                )}
+              </Pressable>
+
+              <View
+                style={{
+                  height: 1,
+                  backgroundColor: '#26292e',
+                  marginHorizontal: 8,
+                }}
+              />
+
+              <Pressable
+                onPress={() => {
+                  setSortMode('alpha');
+                  setSortMenuOpen(false);
+                }}
+                style={{
+                  paddingHorizontal: 12,
+                  paddingVertical: 8,
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                }}
+              >
+                <Text
+                  style={{
+                    color: Colors[theme].text,
+                    fontSize: 13,
+                    flex: 1,
+                  }}
+                >
+                  A–Z
+                </Text>
+                {sortMode === 'alpha' && (
+                  <Feather name="check" size={14} color="#26cb96" />
+                )}
+              </Pressable>
+            </View>
+          )}
+        </View>
       </View>
 
       {/* List */}
