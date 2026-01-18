@@ -1,5 +1,5 @@
 import '../global.css';
-
+import { configureReanimatedLogger, ReanimatedLogLevel } from 'react-native-reanimated';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { Stack } from 'expo-router';
@@ -15,6 +15,10 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 export const unstable_settings = {
   anchor: '(tabs)',
 };
+
+configureReanimatedLogger({
+  strict: false,
+});
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
