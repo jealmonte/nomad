@@ -1,8 +1,8 @@
 "use client"
 
 import { useState } from "react"
-import { Plus, Calendar, MapPin } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from "react-native"
+import { Plus, Calendar, MapPin } from "lucide-react-native"
 import { TripCard } from "@/components/cards/trip-card"
 import { NewTripSheet } from "@/components/sheets/new-trip-sheet"
 import { TripDetailSheet } from "@/components/sheets/trip-detail-sheet"
@@ -11,7 +11,7 @@ const tripsData = [
   {
     id: 1,
     destination: "Tokyo, Japan",
-    image: "/tokyo-skyline-night.png",
+    image: require("../../public/tokyo-skyline-night.png"),
     dates: "Mar 15 - Mar 22, 2026",
     status: "upcoming" as const,
     daysCount: 7,
@@ -20,7 +20,7 @@ const tripsData = [
   {
     id: 2,
     destination: "Barcelona, Spain",
-    image: "/barcelona-sagrada-familia.png",
+    image: require("../../public/barcelona-sagrada-familia.png"),
     dates: "Dec 20 - Dec 27, 2025",
     status: "past" as const,
     daysCount: 7,
@@ -29,7 +29,7 @@ const tripsData = [
   {
     id: 3,
     destination: "Bali, Indonesia",
-    image: "/bali-rice-terraces.png",
+    image: require("../../public/bali-rice-terraces.png"),
     dates: "Sep 1 - Sep 10, 2025",
     status: "past" as const,
     daysCount: 9,
@@ -45,70 +45,69 @@ export function TripsTab() {
   const pastTrips = tripsData.filter((t) => t.status === "past")
 
   return (
-    <div className="min-h-screen">
+    <View style={styles.container}>
       {/* Header */}
-      <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-lg border-b border-border">
-        <div className="flex items-center justify-between px-4 py-3">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight">Trips</h1>
-            <p className="text-sm text-muted-foreground">Plan your adventures</p>
-          </div>
-          <Button
-            onClick={() => setShowNewTrip(true)}
-            size="icon"
-            className="rounded-full bg-primary text-primary-foreground"
+      <View style={styles.header}>
+        <View style={styles.headerContent}>
+          <View>
+            <Text style={styles.headerTitle}>Trips</Text>
+            <Text style={styles.headerSubtitle}>Plan your adventures</Text>
+          </View>
+          <TouchableOpacity
+            onPress={() => setShowNewTrip(true)}
+            style={styles.addButton}
           >
-            <Plus className="w-5 h-5" />
-          </Button>
-        </div>
-      </header>
+            <Plus size={20} color="#fff" />
+          </TouchableOpacity>
+        </View>
+      </View>
 
-      <div className="px-4 py-4 space-y-6">
+      <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* Upcoming Trips */}
         {upcomingTrips.length > 0 && (
-          <section>
-            <h2 className="text-lg font-semibold mb-3 flex items-center gap-2">
-              <Calendar className="w-5 h-5 text-primary" />
-              Upcoming
-            </h2>
-            <div className="space-y-3">
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Calendar size={20} color="#8A2BE2" />
+              <Text style={styles.sectionTitle}>Upcoming</Text>
+            </View>
+            <View style={styles.cardContainer}>
               {upcomingTrips.map((trip) => (
-                <TripCard key={trip.id} {...trip} onClick={() => setSelectedTrip(trip)} />
+                <TripCard key={trip.id} {...trip} onPress={() => setSelectedTrip(trip)} />
               ))}
-            </div>
-          </section>
+            </View>
+          </View>
         )}
 
         {/* Past Trips */}
         {pastTrips.length > 0 && (
-          <section>
-            <h2 className="text-lg font-semibold mb-3 flex items-center gap-2">
-              <MapPin className="w-5 h-5 text-muted-foreground" />
-              Past Adventures
-            </h2>
-            <div className="space-y-3">
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <MapPin size={20} color="#666" />
+              <Text style={styles.sectionTitle}>Past Adventures</Text>
+            </View>
+            <View style={styles.cardContainer}>
               {pastTrips.map((trip) => (
-                <TripCard key={trip.id} {...trip} onClick={() => setSelectedTrip(trip)} />
+                <TripCard key={trip.id} {...trip} onPress={() => setSelectedTrip(trip)} />
               ))}
-            </div>
-          </section>
+            </View>
+          </View>
         )}
 
         {/* Empty State */}
         {tripsData.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-16 text-center">
-            <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
-              <MapPin className="w-8 h-8 text-muted-foreground" />
-            </div>
-            <h3 className="text-lg font-semibold mb-2">No trips yet</h3>
-            <p className="text-muted-foreground mb-4">Start planning your next adventure</p>
-            <Button onClick={() => setShowNewTrip(true)} className="rounded-xl">
-              <Plus className="w-4 h-4 mr-2" />
-              Plan a Trip
-            </Button>
-          </div>
+          <View style={styles.emptyStateContainer}>
+            <View style={styles.emptyStateIconContainer}>
+              <MapPin size={32} color="#666" />
+            </View>
+            <Text style={styles.emptyStateTitle}>No trips yet</Text>
+            <Text style={styles.emptyStateSubtitle}>Start planning your next adventure</Text>
+            <TouchableOpacity onPress={() => setShowNewTrip(true)} style={styles.planTripButton}>
+              <Plus size={16} color="#fff" style={{ marginRight: 8 }} />
+              <Text style={{color: "#fff"}}>Plan a Trip</Text>
+            </TouchableOpacity>
+          </View>
         )}
-      </div>
+      </ScrollView>
 
       <NewTripSheet open={showNewTrip} onOpenChange={setShowNewTrip} />
       <TripDetailSheet
@@ -116,6 +115,94 @@ export function TripsTab() {
         open={!!selectedTrip}
         onOpenChange={(open) => !open && setSelectedTrip(null)}
       />
-    </div>
+    </View>
   )
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+  header: {
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  headerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    letterSpacing: -0.5,
+  },
+  headerSubtitle: {
+    fontSize: 14,
+    color: '#666',
+  },
+  addButton: {
+    borderRadius: 9999,
+    backgroundColor: '#8A2BE2',
+    color: '#fff',
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  scrollContent: {
+    padding: 16,
+  },
+  section: {
+    marginBottom: 24,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginLeft: 8,
+  },
+  cardContainer: {
+    gap: 12,
+  },
+  emptyStateContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 64,
+  },
+  emptyStateIconContainer: {
+    width: 64,
+    height: 64,
+    backgroundColor: '#f1f1f1',
+    borderRadius: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+  },
+  emptyStateTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 8,
+  },
+  emptyStateSubtitle: {
+    color: '#666',
+    marginBottom: 16,
+  },
+  planTripButton: {
+    borderRadius: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#8A2BE2',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+  }
+});
