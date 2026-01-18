@@ -23,6 +23,11 @@ const PERPLEXITY_ENDPOINT = 'https://api.perplexity.ai/chat/completions';
 type LogSpotSheetProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  initialSpot?: {
+    name?: string;
+    location?: string;
+    tags?: string[];
+  };
 };
 
 const tags = ['temples', 'coffee', 'food', 'nightlife', 'nature', 'museums', 'beaches', 'markets'];
@@ -30,7 +35,7 @@ const tags = ['temples', 'coffee', 'food', 'nightlife', 'nature', 'museums', 'be
 // ✅ 1. Define Spacer Component outside to keep List clean
 const FooterSpacer = () => <View style={{ height: 400 }} />;
 
-export function LogSpotSheet({ open, onOpenChange }: LogSpotSheetProps) {
+export function LogSpotSheet({ open, onOpenChange, initialSpot }: LogSpotSheetProps) {
   const listRef = useRef<any>(null);
   const sheetRef = useRef<BottomSheetModal>(null);
   const placesRef = useRef<GooglePlacesAutocompleteRef>(null);
@@ -54,6 +59,23 @@ export function LogSpotSheet({ open, onOpenChange }: LogSpotSheetProps) {
     if (open) sheetRef.current?.present();
     else sheetRef.current?.dismiss();
   }, [open]);
+
+  useEffect(() => {
+    if (!open || !initialSpot) return;
+    setSpotName(initialSpot.name ?? '');
+    setReview('');
+    setSelectedTags(
+      initialSpot.tags ? initialSpot.tags.filter((tag) => tags.includes(tag)) : []
+    );
+    setPhotos([]);
+    setLocationName(initialSpot.location ?? '');
+    setCoordinates(null);
+    setGeneratedRating(null);
+    setStatusText('Log This Spot');
+    if (initialSpot.location) {
+      placesRef.current?.setAddressText(initialSpot.location);
+    }
+  }, [open, initialSpot]);
 
   // ✅ 2. Helper to clear everything
   const resetForm = () => {

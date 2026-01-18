@@ -1,6 +1,6 @@
 import { Feather } from '@expo/vector-icons';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-import { Image, Text, View, type ImageSourcePropType } from 'react-native';
+import { Image, Pressable, Text, View, type ImageSourcePropType } from 'react-native';
 
 export type DiscoverCardProps = {
     id: number;
@@ -11,6 +11,7 @@ export type DiscoverCardProps = {
     distance: string;
     tags: string[];
     matchReason: string;
+    onPress?: () => void;
 };
 
 export function DiscoverCard({
@@ -21,11 +22,12 @@ export function DiscoverCard({
     distance,
     tags,
     matchReason,
+    onPress,
 }: DiscoverCardProps) {
     const imageSource = typeof image === 'string' ? { uri: image } : image;
 
     return (
-        <View className="bg-card border border-border rounded-xl overflow-hidden mb-4">
+        <Pressable onPress={onPress} className="bg-card border border-border rounded-xl overflow-hidden mb-4">
             <View className="flex-row gap-3 p-3">
                 <View className="relative w-24 h-24 self-center">
                     {imageSource ? (
@@ -72,6 +74,6 @@ export function DiscoverCard({
 
                 </View>
             </View>
-        </View>
+        </Pressable>
     );
 }

@@ -11,10 +11,9 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { DiscoverCard, type DiscoverCardProps } from '@/components/cards/discover-card';
+import { LogSpotSheet } from '@/components/sheets/log-spot-sheet';
 import { getLucky } from '@/services/woodwide';
 import * as Localization from 'expo-localization';
-
-const tags = ['temples', 'nightlife', 'coffee', 'beaches', 'nature', 'food', 'museums', 'markets'];
 
 const images = {
   canton: require('@/assets/images/canton-avenue.png'),
@@ -87,6 +86,8 @@ const recommendations: DiscoverCardProps[] = [
     matchReason: 'World‑class bird sanctuary with immersive walkthroughs and live encounters',
   },
 ];
+
+const tags = Array.from(new Set(recommendations.flatMap((spot) => spot.tags)));
 
 const liveEvents = [
   {
@@ -170,6 +171,12 @@ export function DiscoverTab() {
   const [isLuckyLoading, setIsLuckyLoading] = useState(false);
   const [luckySpot, setLuckySpot] = useState<any>(null);
   const [selectedEvent, setSelectedEvent] = useState<(typeof liveEvents)[number] | null>(null);
+  const [logSpotOpen, setLogSpotOpen] = useState(false);
+  const [prefillSpot, setPrefillSpot] = useState<{
+    name: string;
+    location: string;
+    tags: string[];
+  } | null>(null);
 
   const eventScale = useSharedValue(0.9);
   const eventOpacity = useSharedValue(0);
@@ -188,6 +195,11 @@ export function DiscoverTab() {
 
   const toggleTag = (tag: string) => {
     setSelectedTags((prev) => (prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]));
+  };
+
+  const openLogSpot = (spot: DiscoverCardProps) => {
+    setPrefillSpot({ name: spot.name, location: spot.location, tags: spot.tags });
+    setLogSpotOpen(true);
   };
 
   // 3. Handler to call WoodWide AI
@@ -334,18 +346,27 @@ export function DiscoverTab() {
               </View>
             );
           }
-          return <DiscoverCard {...item} />;
+          return <DiscoverCard {...item} onPress={() => openLogSpot(item)} />;
         }}
         ListFooterComponent={
           <View>
             <Text className="text-lg font-semibold text-foreground mb-3">Popular in Pittsburgh</Text>
             <View>
               {filteredPopular.map((spot) => (
-                <DiscoverCard key={spot.id} {...spot} />
+                <DiscoverCard key={spot.id} {...spot} onPress={() => openLogSpot(spot)} />
               ))}
             </View>
           </View>
         }
+      />
+
+      <LogSpotSheet
+        open={logSpotOpen}
+        onOpenChange={(open) => {
+          setLogSpotOpen(open);
+          if (!open) setPrefillSpot(null);
+        }}
+        initialSpot={prefillSpot ?? undefined}
       />
 
       <Modal
