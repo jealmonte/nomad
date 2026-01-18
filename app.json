@@ -3,6 +3,7 @@
     "name": "nomad",
     "slug": "nomad",
     "scheme": "nomad",
+    "assetBundlePatterns": ["**/*"],
     "plugins": [
       "expo-router",
       "expo-font"
