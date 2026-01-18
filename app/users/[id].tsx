@@ -24,6 +24,12 @@ type PublicProfileRow = {
   last_name: string | null;
   bio: string | null;
   followers?: number;
+  // optional stats if you add them later
+  countries?: number | null;
+  cities?: number | null;
+  spots?: number | null;
+  avgScore?: number | null;
+  top_tags?: string[] | null;
 };
 
 type LoggedSpotRow = {
@@ -57,7 +63,7 @@ export default function PublicProfileScreen() {
       if (!id) return;
       setLoading(true);
 
-      // profile
+      // profile (same shape you had before)
       const { data: profileRow } = await supabase
         .from('profiles')
         .select('id, username, first_name, last_name, bio')
@@ -308,8 +314,34 @@ export default function PublicProfileScreen() {
     `${profile.first_name ?? ''} ${profile.last_name ?? ''}`.trim() ||
     profile.username;
 
+  // derive stats from spots until you add DB columns
+  const derivedCountries = new Set(
+    spots
+      .map((s) => s.spot?.country)
+      .filter((v): v is string => !!v),
+  ).size;
+  const derivedCities = new Set(
+    spots
+      .map((s) => {
+        const city = s.spot?.city;
+        const country = s.spot?.country;
+        return city && country ? `${city},${country}` : null;
+      })
+      .filter((v): v is string => !!v),
+  ).size;
+  const spotCount = spots.length;
+  const avgScore =
+    spots.length > 0
+      ? spots.reduce(
+          (sum, s) => sum + (typeof s.auto_score === 'number' ? s.auto_score : 0),
+          0,
+        ) / spots.length
+      : 0;
+
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: Colors[theme].background }}>
+    <SafeAreaView
+      style={{ flex: 1, backgroundColor: Colors[theme].background }}
+    >
       {/* Header */}
       <View
         style={{
@@ -404,7 +436,7 @@ export default function PublicProfileScreen() {
         </Pressable>
       </View>
 
-      {/* Bio */}
+      {/* Bio + stats + spots list */}
       {profile.bio ? (
         <View style={{ paddingHorizontal: 16, paddingVertical: 8 }}>
           <Text style={{ color: Colors[theme].text, fontSize: 13 }}>
@@ -413,7 +445,6 @@ export default function PublicProfileScreen() {
         </View>
       ) : null}
 
-      {/* Spots list */}
       <FlatList
         data={spots}
         keyExtractor={(item) => item.id}
@@ -422,6 +453,21 @@ export default function PublicProfileScreen() {
           paddingHorizontal: 16,
           paddingVertical: 8,
         }}
+        ListHeaderComponent={
+          <View style={{ marginBottom: 12 }}>
+            {/* Stats row */}
+            <View className="flex-row flex-wrap gap-3 mb-4">
+              <StatCard icon="globe" label="Countries" value={derivedCountries} />
+              <StatCard icon="map-pin" label="Cities" value={derivedCities} />
+              <StatCard icon="star" label="Spots Logged" value={spotCount} />
+              <StatCard
+                icon="users"
+                label="Avg Score"
+                value={Number(avgScore.toFixed(1))}
+              />
+            </View>
+          </View>
+        }
         ListEmptyComponent={
           <View
             style={{
@@ -445,5 +491,31 @@ export default function PublicProfileScreen() {
         }
       />
     </SafeAreaView>
+  );
+}
+
+function StatCard({
+  icon,
+  label,
+  value,
+}: {
+  icon: keyof typeof Feather.glyphMap;
+  label: string;
+  value: number;
+}) {
+  return (
+    <View className="w-[48%]">
+      <View className="bg-card border border-border rounded-xl p-4 w-full min-h-[80px]">
+        <View className="flex-row items-center gap-3">
+          <View className="h-10 w-10 rounded-full bg-primary/10 items-center justify-center">
+            <Feather name={icon} size={18} color="#33d6b3" />
+          </View>
+          <View>
+            <Text className="text-2xl font-bold text-foreground">{value}</Text>
+            <Text className="text-xs text-muted-foreground">{label}</Text>
+          </View>
+        </View>
+      </View>
+    </View>
   );
 }
