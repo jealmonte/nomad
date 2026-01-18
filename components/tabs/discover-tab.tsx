@@ -1,61 +1,83 @@
 import { Feather } from '@expo/vector-icons';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useMemo, useState } from 'react';
-import { FlatList, Pressable, ScrollView, Text, TextInput, View, ActivityIndicator, Alert, Modal, Image } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, Image, Modal, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { DiscoverCard, type DiscoverCardProps } from '@/components/cards/discover-card';
-import { getLucky } from '@/services/woodwide'; 
+import { getLucky } from '@/services/woodwide';
 
 const tags = ['temples', 'nightlife', 'coffee', 'beaches', 'nature', 'food', 'museums', 'markets'];
 
 const images = {
-  tsukiji: require('@/assets/images/tsukiji-fish-market-tokyo.jpg'),
-  golden: require('@/assets/images/golden-gai-tokyo-nightlife.jpg'),
-  teamlab: require('@/assets/images/teamlab-borderless-digital-art.jpg'),
-  meiji: require('@/assets/images/meiji-shrine-tokyo-forest.jpg'),
+  canton: require('@/assets/images/canton-avenue.png'),
+  cathedral: require('@/assets/images/cathedral-of-learning.png'),
+  childrens: require('@/assets/images/childrens-museum.png'),
+  garden: require('@/assets/images/garden.png'),
+  aviary: require('@/assets/images/national-aviary.png'),
+  strip: require('@/assets/images/strip-district.png'),
 };
 
 const recommendations: DiscoverCardProps[] = [
   {
     id: 1,
-    name: 'Tsukiji Outer Market',
-    location: 'Tokyo, Japan',
-    image: images.tsukiji,
-    aiScore: 9.1,
-    distance: '2.3 km',
-    tags: ['food', 'markets', 'breakfast'],
-    matchReason: 'Based on your love for food markets',
+    name: 'Canton Avenue',
+    location: 'Beechview',
+    image: images.canton,
+    aiScore: 8.3,
+    distance: '6.8 mi',
+    tags: ['outdoors', 'photo'],
+    matchReason: 'Iconic super-steep street and a quick, quirky photo stop',
   },
   {
     id: 2,
-    name: 'Golden Gai',
-    location: 'Shinjuku, Tokyo',
-    image: images.golden,
-    aiScore: 8.9,
-    distance: '4.1 km',
-    tags: ['nightlife', 'bars', 'authentic'],
-    matchReason: 'Friends rated this highly',
+    name: 'Phipps Conservatory and Botanical Gardens',
+    location: '1 Schenley Dr',
+    image: images.garden,
+    aiScore: 9.4,
+    distance: '0.2 mi',
+    tags: ['nature', 'gardens'],
+    matchReason: 'Gorgeous glasshouse gardens and seasonal exhibits year-round',
   },
   {
     id: 3,
-    name: 'teamLab Borderless',
-    location: 'Tokyo, Japan',
-    image: images.teamlab,
-    aiScore: 9.4,
-    distance: '8.2 km',
-    tags: ['museums', 'art', 'immersive'],
-    matchReason: 'Trending with travelers like you',
+    name: 'Cathedral of Learning',
+    location: '4200 Fifth Ave',
+    image: images.cathedral,
+    aiScore: 9.2,
+    distance: '0.3 mi',
+    tags: ['architecture', 'history'],
+    matchReason: 'Pittsburgh’s signature skyline icon with stunning Gothic interiors and the Nationality Rooms',
   },
   {
     id: 4,
-    name: 'Meiji Shrine',
-    location: 'Shibuya, Tokyo',
-    image: images.meiji,
+    name: 'Strip District',
+    location: '120 Fifth Avenue',
+    image: images.strip,
+    aiScore: 8.9,
+    distance: '3.0 mi',
+    tags: ['food', 'markets'],
+    matchReason: 'Lively food markets and local shops; great for sampling Pittsburgh staples',
+  },
+  {
+    id: 5,
+    name: 'Children’s Museum of Pittsburgh',
+    location: 'Beechview',
+    image: images.childrens,
     aiScore: 8.8,
-    distance: '5.6 km',
-    tags: ['temples', 'nature', 'peaceful'],
-    matchReason: 'You liked similar temples',
+    distance: '5.2 mi',
+    tags: ['museums', 'family'],
+    matchReason: 'Hands‑on exhibits and creative play spaces that are fun even for adults',
+  },
+  {
+    id: 6,
+    name: 'National Aviary',
+    location: '700 Arch Street',
+    image: images.aviary,
+    aiScore: 9.0,
+    distance: '6.8 mi',
+    tags: ['nature', 'wildlife'],
+    matchReason: 'World‑class bird sanctuary with immersive walkthroughs and live encounters',
   },
 ];
 

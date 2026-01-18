@@ -13,13 +13,21 @@ export type DiscoverCardProps = {
     matchReason: string;
 };
 
-export function DiscoverCard({ name, location, image, aiScore, distance, tags, matchReason }: DiscoverCardProps) {
+export function DiscoverCard({
+    name,
+    location,
+    image,
+    aiScore,
+    distance,
+    tags,
+    matchReason,
+}: DiscoverCardProps) {
     const imageSource = typeof image === 'string' ? { uri: image } : image;
 
     return (
         <View className="bg-card border border-border rounded-xl overflow-hidden mb-4">
             <View className="flex-row gap-3 p-3">
-                <View className="relative w-24 h-24">
+                <View className="relative w-24 h-24 self-center">
                     {imageSource ? (
                         <Image source={imageSource} className="w-full h-full rounded-lg" resizeMode="cover" />
                     ) : (
@@ -32,10 +40,15 @@ export function DiscoverCard({ name, location, image, aiScore, distance, tags, m
 
                 <View className="flex-1 min-w-0">
                     <View className="flex-row items-start justify-between mb-1">
-                        <Text className="font-semibold text-foreground pr-2" numberOfLines={1}>
+                        <Text
+                            className="flex-1 pr-2 font-semibold text-foreground"
+                            numberOfLines={2}
+                            ellipsizeMode="tail">
                             {name}
                         </Text>
-                        <MaterialCommunityIcons name="bookmark-outline" size={18} color="#a6a6a6" />
+                        <View className="flex-shrink-0">
+                            <MaterialCommunityIcons name="bookmark-outline" size={18} color="#a6a6a6" />
+                        </View>
                     </View>
 
                     <View className="flex-row items-center gap-2 mb-2">
@@ -53,7 +66,10 @@ export function DiscoverCard({ name, location, image, aiScore, distance, tags, m
                         ))}
                     </View>
 
-                    <Text className="text-xs text-primary">{matchReason}</Text>
+                    <Text className="text-xs text-primary" numberOfLines={2} ellipsizeMode="tail">
+                        {matchReason}
+                    </Text>
+
                 </View>
             </View>
         </View>
