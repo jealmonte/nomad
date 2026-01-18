@@ -22,10 +22,43 @@ export type SupabaseSpot = {
   created_at?: string;
 };
 
+export interface ItineraryActivity {
+  time: string;
+  spot: string;
+  type: string;
+  desc: string;
+  duration: string;
+  cost: string;
+  aiScore: number;
+  image?: any;
+}
+
+export interface ItineraryDay {
+  day: number;
+  title: string;
+  activities: ItineraryActivity[];
+}
+
 // Helper: Safe Base64
 const safeBase64 = (str: string) => {
   return btoa(unescape(encodeURIComponent(str)));
 };
+
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+const TOKYO_SPOTS = [
+  { name: "Senso-ji Temple", type: "temples", desc: "Ancient Buddhist temple", duration: "2h", cost: "Free", baseScore: 9.0 },
+  { name: "Nakamise St.", type: "shopping", desc: "Shopping street", duration: "1.5h", cost: "$$", baseScore: 8.5 },
+  { name: "Izakaya Dinner", type: "food", desc: "Local pub food", duration: "2h", cost: "$$", baseScore: 9.2 },
+  { name: "TeamLab Planets", type: "art", desc: "Digital art museum", duration: "3h", cost: "$$$", baseScore: 9.5 },
+  { name: "Shibuya Crossing", type: "sightseeing", desc: "Famous crossing", duration: "1h", cost: "Free", baseScore: 8.8 },
+  { name: "Yoyogi Park", type: "nature", desc: "Large city park", duration: "2h", cost: "Free", baseScore: 8.9 },
+  { name: "Harajuku", type: "shopping", desc: "Youth fashion", duration: "3h", cost: "$$", baseScore: 8.2 },
+  { name: "Tsukiji Market", type: "food", desc: "Fresh seafood breakfast", duration: "2h", cost: "$$", baseScore: 9.3 },
+  { name: "Meiji Shrine", type: "temples", desc: "Forest shrine", duration: "1.5h", cost: "Free", baseScore: 9.1 },
+  { name: "Golden Gai", type: "nightlife", desc: "Tiny bars alley", duration: "3h", cost: "$$", baseScore: 8.7 },
+  { name: "Akihabara", type: "shopping", desc: "Electronics & Anime", duration: "3h", cost: "$$", baseScore: 8.0 },
+];
 
 // Helper: CSV Generator
 const arrayToCsv = (data: any[], columns: string[]) => {
@@ -40,9 +73,6 @@ const arrayToCsv = (data: any[], columns: string[]) => {
   }).join('\n');
   return header + body;
 };
-
-// Helper: Sleep
-const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 // Helper: Haversine Distance (Lat/Lon -> Km)
 function getDistanceFromLatLonInKm(lat1: number, lon1: number, lat2: number, lon2: number) {
@@ -277,4 +307,74 @@ export async function getLucky() {
     console.error('Get Lucky Logic Error:', error);
     throw error;
   }
+}
+
+export async function generateItinerary(
+  destination: string, 
+  interests: string[], 
+  days: number = 3
+): Promise<ItineraryDay[]> {
+  
+  // 1. SIMULATE NETWORK DELAY (The "Thinking" Phase)
+  await sleep(2500);
+
+  // 2. FILTER & SCORE LOGIC (Simulating AI Personalization)
+  // In a real app, this is where we'd send user_id to woodwide.ai
+  
+  const scoredSpots = TOKYO_SPOTS.map(spot => {
+    let score = spot.baseScore;
+    
+    // Boost score if it matches user interests
+    if (interests.includes(spot.type)) {
+      score += 0.5; 
+    }
+    
+    // Add some "AI Variance" to make it feel personalized/dynamic
+    const variance = (Math.random() * 0.4) - 0.2; 
+    
+    // Cap at 9.9
+    let finalScore = Math.min(9.9, score + variance);
+    
+    return { ...spot, aiScore: Number(finalScore.toFixed(1)) };
+  });
+
+  // Sort by score to get the "best" fit
+  scoredSpots.sort((a, b) => b.aiScore - a.aiScore);
+
+  // 3. BUILD SCHEDULE
+  const itinerary: ItineraryDay[] = [];
+  let spotIndex = 0;
+
+  const dayTitles = ["Arrival & Culture", "Modern Vibes", "Nature & Chill", "Hidden Gems", "Last Hurrah"];
+  const timeSlots = ["10:00 AM", "1:00 PM", "4:00 PM", "7:00 PM"];
+
+  for (let i = 1; i <= days; i++) {
+    const dayActivities: ItineraryActivity[] = [];
+    
+    // Pick 3-4 activities per day
+    for (let j = 0; j < 3; j++) {
+      if (spotIndex >= scoredSpots.length) spotIndex = 0; // Loop if running out
+      
+      const spot = scoredSpots[spotIndex];
+      dayActivities.push({
+        time: timeSlots[j],
+        spot: spot.name,
+        type: spot.type,
+        desc: spot.desc,
+        duration: spot.duration,
+        cost: spot.cost,
+        aiScore: spot.aiScore
+      });
+      
+      spotIndex++;
+    }
+
+    itinerary.push({
+      day: i,
+      title: dayTitles[i-1] || `Day ${i} Adventure`,
+      activities: dayActivities
+    });
+  }
+
+  return itinerary;
 }
