@@ -1,70 +1,73 @@
 // components/tabs/profile-tab.tsx
-import { RankedSpotCard, type RankedSpotCardProps } from '@/components/cards/ranked-spot-card';
-import { getCurrentUserId } from '@/lib/auth';
-import { supabase } from '@/lib/supabase';
-import { Feather } from '@expo/vector-icons';
-import * as SMS from 'expo-sms';
-import React, { useEffect, useState } from 'react';
-import { Alert, FlatList, Image, Pressable, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import {
+  RankedSpotCard,
+  type RankedSpotCardProps,
+} from "@/components/cards/ranked-spot-card";
+import { getCurrentUserId } from "@/lib/auth";
+import { supabase } from "@/lib/supabase";
+import { Feather } from "@expo/vector-icons";
+import * as SMS from "expo-sms";
+import React, { useEffect, useState } from "react";
+import { Alert, FlatList, Image, Pressable, Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 const images = {
-  fushimi: require('@/assets/images/fushimi-inari-torii.jpg'),
-  cafe: require('@/assets/images/cafe-central-vienna.jpg'),
-  sushi: require('@/assets/images/sushi-restaurant-tokyo.jpg'),
-  plitvice: require('@/assets/images/plitvice-lakes-waterfall.jpg'),
-  angkor: require('@/assets/images/angkor-wat-sunrise.jpg'),
+  fushimi: require("@/assets/images/fushimi-inari-torii.jpg"),
+  cafe: require("@/assets/images/cafe-central-vienna.jpg"),
+  sushi: require("@/assets/images/sushi-restaurant-tokyo.jpg"),
+  plitvice: require("@/assets/images/plitvice-lakes-waterfall.jpg"),
+  angkor: require("@/assets/images/angkor-wat-sunrise.jpg"),
 };
 
 const rankedSpots: RankedSpotCardProps[] = [
   {
     rank: 1,
-    name: 'Fushimi Inari Shrine',
-    location: 'Kyoto, Japan',
+    name: "Fushimi Inari Shrine",
+    location: "Kyoto, Japan",
     image: images.fushimi,
     aiScore: 9.8,
-    tag: 'temples',
+    tag: "temples",
   },
   {
     rank: 2,
-    name: 'Café Central',
-    location: 'Vienna, Austria',
+    name: "Café Central",
+    location: "Vienna, Austria",
     image: images.cafe,
     aiScore: 9.6,
-    tag: 'coffee',
+    tag: "coffee",
   },
   {
     rank: 3,
-    name: 'Sukiyabashi Jiro',
-    location: 'Tokyo, Japan',
+    name: "Sukiyabashi Jiro",
+    location: "Tokyo, Japan",
     image: images.sushi,
     aiScore: 9.5,
-    tag: 'food',
+    tag: "food",
   },
   {
     rank: 4,
-    name: 'Plitvice Lakes',
-    location: 'Croatia',
+    name: "Plitvice Lakes",
+    location: "Croatia",
     image: images.plitvice,
     aiScore: 9.4,
-    tag: 'nature',
+    tag: "nature",
   },
   {
     rank: 5,
-    name: 'Angkor Wat',
-    location: 'Siem Reap, Cambodia',
+    name: "Angkor Wat",
+    location: "Siem Reap, Cambodia",
     image: images.angkor,
     aiScore: 9.3,
-    tag: 'temples',
+    tag: "temples",
   },
 ];
 
-const SLOGAN = 'discover your perfect spots with AI-powered recommendations';
+const SLOGAN = "discover your perfect spots with AI-powered recommendations";
 
 async function handleShare(inviteCode: string) {
   const isAvailable = await SMS.isAvailableAsync();
   if (!isAvailable) {
-    Alert.alert('Not supported', 'SMS is not available on this device.');
+    Alert.alert("Not supported", "SMS is not available on this device.");
     return;
   }
 
@@ -92,8 +95,8 @@ type ProfileTabProps = {
   };
 };
 
-type ListItem = { type: 'content'; id: 'content' };
-const listData: ListItem[] = [{ type: 'content', id: 'content' }];
+type ListItem = { type: "content"; id: "content" };
+const listData: ListItem[] = [{ type: "content", id: "content" }];
 
 export function ProfileTab({
   onLogout,
@@ -111,24 +114,24 @@ export function ProfileTab({
   useEffect(() => {
     const fetchStats = async () => {
       const userId = await getCurrentUserId();
-  
+
       if (!userId) {
-        console.error('PROFILE stats: no auth user');
+        console.error("PROFILE stats: no auth user");
         return;
       }
-  
+
       const { data: spotsRows, error: spotsError } = await supabase
-        .from('posts')
-        .select('id, auto_score')
-        .eq('user_id', userId);
-  
+        .from("posts")
+        .select("id, auto_score")
+        .eq("user_id", userId);
+
       if (spotsError || !spotsRows) {
-        console.error('PROFILE stats error', spotsError);
+        console.error("PROFILE stats error", spotsError);
         return;
       }
-  
+
       setSpotCount(spotsRows.length);
-  
+
       if (spotsRows.length > 0) {
         const sum = spotsRows.reduce(
           (acc: number, row: any) => acc + (row.auto_score ?? 0),
@@ -139,12 +142,12 @@ export function ProfileTab({
         setAvgScore(0);
       }
     };
-  
+
     fetchStats();
   }, []);
 
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={['top']}>
+    <SafeAreaView className="flex-1 bg-background" edges={["top"]}>
       <FlatList
         data={listData}
         stickyHeaderIndices={[0]}
@@ -192,7 +195,7 @@ export function ProfileTab({
                   source={{ uri: profile.avatar_url }}
                   className="h-20 w-20 rounded-full border-2 border-primary"
                   resizeMode="cover"
-                  style={{ backgroundColor: 'transparent' }}
+                  style={{ backgroundColor: "transparent" }}
                 />
               ) : (
                 <View className="h-20 w-20 rounded-full border-2 border-primary items-center justify-center bg-secondary">
@@ -200,10 +203,14 @@ export function ProfileTab({
                 </View>
               )}
               <View className="flex-1">
-                <Text className="text-xl font-bold text-foreground">{fullName}</Text>
+                <Text className="text-xl font-bold text-foreground">
+                  {fullName}
+                </Text>
                 <Text className="text-sm text-muted-foreground">{handle}</Text>
                 {profile.bio ? (
-                  <Text className="text-sm text-foreground mt-1">{profile.bio}</Text>
+                  <Text className="text-sm text-foreground mt-1">
+                    {profile.bio}
+                  </Text>
                 ) : null}
               </View>
             </View>
@@ -225,17 +232,43 @@ export function ProfileTab({
             </View>
 
             {/* Stat cards */}
-            <View className="flex-row flex-wrap gap-3">
-              <StatCard icon="globe" label="Countries" value={profile.countries} />
-              <StatCard icon="map-pin" label="Cities" value={profile.cities} />
-
-              {/* Spots Logged – tap to open SpotsLoggedTab */}
-              <Pressable onPress={onOpenSpots}>
-                <StatCard icon="star" label="Spots Logged" value={spotCount} />
-              </Pressable>
-
-              <StatCard icon="users" label="Avg Score" value={avgScore} />
+           <View style={{ gap: 12 }}>
+        {/* Row 1: Countries and Cities */}
+            <View style={{ flexDirection: 'row', gap: 12 }}>
+              <View style={{ flex: 1}}>
+                <StatCard
+                  icon="globe"
+                  label="Countries"
+                  value={profile.countries}
+                />
+              </View>
+              <View style={{ flex: 1 }}>
+                <StatCard 
+                  icon="map-pin" 
+                  label="Cities" 
+                  value={profile.cities} 
+                />
+              </View>
             </View>
+
+            {/* Row 2: Spots Logged and Avg Score */}
+            <View style={{ flexDirection: 'row', gap: 12 }}>
+              <Pressable onPress={onOpenSpots} style={{ flex: 1 }}>
+                <StatCard
+                  icon="star"
+                  label="Spots Logged"
+                  value={spotCount}
+                />
+              </Pressable>
+              <View style={{ flex: 1 }}>
+                <StatCard 
+                  icon="users" 
+                  label="Avg Score" 
+                  value={avgScore} 
+                />
+              </View>
+            </View>
+          </View>
 
             {/* Taste profile tags */}
             <View>
@@ -244,8 +277,13 @@ export function ProfileTab({
               </Text>
               <View className="flex-row flex-wrap gap-2">
                 {profile.topTags.map((tag) => (
-                  <View key={tag} className="bg-secondary rounded-full px-3 py-1">
-                    <Text className="text-secondary-foreground text-xs">{tag}</Text>
+                  <View
+                    key={tag}
+                    className="bg-secondary rounded-full px-3 py-1"
+                  >
+                    <Text className="text-secondary-foreground text-xs">
+                      {tag}
+                    </Text>
                   </View>
                 ))}
               </View>
@@ -267,7 +305,9 @@ export function ProfileTab({
             <View className="p-4 rounded-xl border border-primary/30 bg-primary/10">
               <View className="flex-row items-center justify-between">
                 <View>
-                  <Text className="font-semibold text-foreground">Invite Friends</Text>
+                  <Text className="font-semibold text-foreground">
+                    Invite Friends
+                  </Text>
                   <Text className="text-sm text-muted-foreground">
                     Share your invite code
                   </Text>
@@ -296,7 +336,7 @@ function StatCard({
   value: number;
 }) {
   return (
-    <View className="bg-card border border-border rounded-xl p-4 w-[48%]">
+    <View className="bg-card border border-border rounded-xl p-4 w-[100%]">
       <View className="flex-row items-center gap-3">
         <View className="h-10 w-10 rounded-full bg-primary/10 items-center justify-center">
           <Feather name={icon} size={18} color="#33d6b3" />
