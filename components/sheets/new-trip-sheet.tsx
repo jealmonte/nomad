@@ -6,12 +6,13 @@ import {
   BottomSheetTextInput,
 } from '@gorhom/bottom-sheet';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Pressable, Text, View, Modal, StyleSheet } from 'react-native';
+import { Pressable, Text, View, Modal, StyleSheet, Alert } from 'react-native';
 import { format, isAfter } from 'date-fns';
 
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { SimpleCalendar } from '@/components/ui/simple-calendar';
+import { GeneratedItinerarySheet } from './GeneratedItinerarySheet'; // Ensure exact file name match
 
 type NewTripSheetProps = {
   open: boolean;
@@ -34,6 +35,9 @@ export function NewTripSheet({ open, onOpenChange }: NewTripSheetProps) {
   // --- UI State ---
   const [showCalendar, setShowCalendar] = useState(false);
   const [activeDateMode, setActiveDateMode] = useState<'start' | 'end'>('start');
+  
+  // 2. STATE FOR THE RESULT SHEET
+  const [showGeneratedItinerary, setShowGeneratedItinerary] = useState(false);
 
   // Helper to reset all fields
   const resetForm = () => {
@@ -48,7 +52,6 @@ export function NewTripSheet({ open, onOpenChange }: NewTripSheetProps) {
       sheetRef.current?.present();
     } else {
       sheetRef.current?.dismiss();
-      // Wait for the sheet to close (animation) before clearing the form
       const timer = setTimeout(() => {
         resetForm();
       }, 300);
@@ -62,7 +65,6 @@ export function NewTripSheet({ open, onOpenChange }: NewTripSheetProps) {
     );
   };
 
-  // --- Calendar Handlers ---
   const openCalendar = (mode: 'start' | 'end') => {
     setActiveDateMode(mode);
     setShowCalendar(true);
@@ -83,6 +85,27 @@ export function NewTripSheet({ open, onOpenChange }: NewTripSheetProps) {
         setEndDate(date);
       }
     }
+  };
+
+  // 3. HANDLE GENERATE BUTTON CLICK
+  const handleGenerateClick = () => {
+    if (!destination || !startDate || !endDate) {
+        Alert.alert("Missing Info", "Please select a destination and dates first.");
+        return;
+    }
+    setShowGeneratedItinerary(true);
+  };
+
+  // 4. HANDLE SAVE (Close everything)
+  const handleSaveTrip = () => {
+    // Close the generated itinerary modal
+    setShowGeneratedItinerary(false);
+    
+    // Close the New Trip Sheet (the parent bottom sheet)
+    onOpenChange(false);
+    
+    // Optional: Reset form immediately
+    resetForm();
   };
 
   return (
@@ -203,7 +226,10 @@ export function NewTripSheet({ open, onOpenChange }: NewTripSheetProps) {
           </View>
 
           {/* Generate Button */}
-          <Pressable className="mt-6 h-12 rounded-xl bg-primary items-center justify-center flex-row">
+          <Pressable 
+            onPress={handleGenerateClick}
+            className="mt-6 h-12 rounded-xl bg-primary items-center justify-center flex-row"
+          >
             <MaterialIcons name="auto-awesome" size={18} color="#0f1116" />
             <Text className="ml-2 text-primary-foreground font-semibold">Generate Itinerary</Text>
           </Pressable>
@@ -231,6 +257,17 @@ export function NewTripSheet({ open, onOpenChange }: NewTripSheetProps) {
           </Pressable>
         </Pressable>
       </Modal>
+
+      {/* Generated Itinerary Sheet - Now with onSave handler */}
+      <GeneratedItinerarySheet 
+        open={showGeneratedItinerary}
+        onOpenChange={setShowGeneratedItinerary}
+        destination={destination}
+        startDate={startDate ? format(startDate, 'MMM d') : ''}
+        endDate={endDate ? format(endDate, 'MMM d') : ''}
+        interests={selectedInterests}
+        onSave={handleSaveTrip}
+      />
     </>
   );
 }
