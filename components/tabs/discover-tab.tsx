@@ -1,10 +1,11 @@
 import { Feather } from '@expo/vector-icons';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useMemo, useState } from 'react';
-import { FlatList, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { FlatList, Pressable, ScrollView, Text, TextInput, View, ActivityIndicator, Alert, Modal, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { DiscoverCard, type DiscoverCardProps } from '@/components/cards/discover-card';
+import { getLucky } from '@/services/woodwide'; 
 
 const tags = ['temples', 'nightlife', 'coffee', 'beaches', 'nature', 'food', 'museums', 'markets'];
 
@@ -61,9 +62,46 @@ const recommendations: DiscoverCardProps[] = [
 export function DiscoverTab() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  
+  // 2. Add state for the Get Lucky feature
+  const [isLuckyLoading, setIsLuckyLoading] = useState(false);
+  const [luckySpot, setLuckySpot] = useState<any>(null);
 
   const toggleTag = (tag: string) => {
     setSelectedTags((prev) => (prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]));
+  };
+
+  // 3. Handler to call WoodWide AI
+  const handleGetLucky = async () => {
+    setIsLuckyLoading(true);
+    setLuckySpot(null);
+
+    try {
+      // Call the service
+      const spot = await getLucky();
+
+      // Calculate display score (e.g. 0.99 -> 99)
+      const rawScore = (spot.compatibilityScore || 0) * 100;
+      const displayScore = rawScore > 99 ? 99 : rawScore.toFixed(0);
+
+      // Prepare the data for the modal
+      // Note: Since the AI returns data without local image paths, 
+      // we'll assign a random image from our assets for the demo to look nice.
+      const randomImageKey = Object.keys(images)[Math.floor(Math.random() * Object.keys(images).length)] as keyof typeof images;
+
+      setLuckySpot({
+        ...spot,
+        image: images[randomImageKey], 
+        matchReason: `AI Match: ${displayScore}%`,
+        distance: typeof spot.distance === 'number' ? `${spot.distance} km` : spot.distance,
+      });
+
+    } catch (e: any) {
+      console.error(e);
+      Alert.alert("AI Error", "Could not find a lucky spot. Please try again.");
+    } finally {
+      setIsLuckyLoading(false);
+    }
   };
 
   const filtered = useMemo(() => {
@@ -134,11 +172,22 @@ export function DiscoverTab() {
           if ('type' in item) {
             return (
               <View className="pt-4">
-                <Pressable className="w-full bg-primary rounded-xl h-14 items-center justify-center flex-row">
-                  <MaterialIcons name="auto-awesome" size={20} color="#0f1116" />
-                  <Text className="ml-2 text-primary-foreground text-base font-semibold">
-                    Get Lucky - Surprise Me!
-                  </Text>
+                {/* 4. Update the Button to be interactive */}
+                <Pressable 
+                  onPress={handleGetLucky}
+                  disabled={isLuckyLoading}
+                  className={`w-full rounded-xl h-14 items-center justify-center flex-row ${isLuckyLoading ? 'bg-primary/80' : 'bg-primary'}`}
+                >
+                  {isLuckyLoading ? (
+                    <ActivityIndicator color="#0f1116" />
+                  ) : (
+                    <>
+                      <MaterialIcons name="auto-awesome" size={20} color="#0f1116" />
+                      <Text className="ml-2 text-primary-foreground text-base font-semibold">
+                        Get Lucky - Surprise Me!
+                      </Text>
+                    </>
+                  )}
                 </Pressable>
 
                 <View className="py-3 flex-row items-center gap-2">
@@ -153,6 +202,60 @@ export function DiscoverTab() {
           return <DiscoverCard {...item} />;
         }}
       />
+
+      {/* 5. Result Modal */}
+      <Modal visible={!!luckySpot} animationType="slide" transparent>
+        <View className="flex-1 bg-black/50 justify-end">
+          <View className="bg-background rounded-t-3xl p-6 min-h-[50%]">
+            <View className="flex-row justify-between items-center mb-4">
+              <Text className="text-2xl font-bold text-foreground">Your Lucky Spot!</Text>
+              <Pressable onPress={() => setLuckySpot(null)} className="p-2 bg-secondary rounded-full">
+                <Feather name="x" size={24} color="#fff" />
+              </Pressable>
+            </View>
+            
+            <Text className="text-muted-foreground mb-6">
+              Our AI analyzed your history and thinks you will love this:
+            </Text>
+
+            {luckySpot && (
+              <View className="bg-card border border-border rounded-2xl overflow-hidden mb-6">
+                 {/* Image Placeholder or Actual Image */}
+                 <Image source={luckySpot.image} className="w-full h-48" resizeMode="cover" />
+                 
+                 <View className="p-4">
+                    <View className="flex-row justify-between items-start mb-2">
+                        <Text className="text-xl font-bold text-foreground flex-1 mr-2">{luckySpot.name}</Text>
+                        <View className="bg-green-100 dark:bg-green-900 px-2 py-1 rounded">
+                            <Text className="text-green-700 dark:text-green-300 font-bold text-xs">{luckySpot.aiScore}</Text>
+                        </View>
+                    </View>
+                    
+                    <Text className="text-muted-foreground mb-3">{luckySpot.location} • {luckySpot.distance}</Text>
+                    
+                    <View className="bg-purple-100 dark:bg-purple-900/30 self-start px-3 py-1.5 rounded-lg mb-4 flex-row items-center">
+                      <MaterialIcons name="auto-awesome" size={14} color="#a855f7" />
+                      <Text className="text-purple-700 dark:text-purple-300 text-xs font-semibold ml-1">{luckySpot.matchReason}</Text>
+                    </View>
+
+                    <View className="flex-row flex-wrap gap-2">
+                        {luckySpot.tags && luckySpot.tags.map((t: string) => (
+                            <Text key={t} className="text-xs text-muted-foreground bg-secondary px-2 py-1 rounded">#{t}</Text>
+                        ))}
+                    </View>
+                 </View>
+              </View>
+            )}
+
+            <Pressable 
+              onPress={() => setLuckySpot(null)}
+              className="w-full bg-primary h-14 rounded-xl items-center justify-center"
+            >
+              <Text className="text-primary-foreground font-bold text-lg">Awesome!</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }

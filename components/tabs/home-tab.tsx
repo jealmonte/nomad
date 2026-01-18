@@ -1,11 +1,13 @@
 import { Feather, Ionicons } from '@expo/vector-icons';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useState } from 'react';
-import { FlatList, Pressable, Text, View } from 'react-native';
+import { FlatList, Pressable, Text, View, ActivityIndicator, Alert, Modal, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { SpotCard } from '@/components/cards/spot-card';
 import { LogSpotSheet } from '@/components/sheets/log-spot-sheet';
+import { NewTripSheet } from '@/components/sheets/new-trip-sheet'; // <--- 1. Import NewTripSheet
+import { getLucky } from '@/services/woodwide';
 
 const images = {
     sarah: require('@/assets/images/diverse-woman-avatar.png'),
@@ -15,6 +17,9 @@ const images = {
     cafe: require('@/assets/images/cafe-de-flore-paris.jpg'),
     fushimi: require('@/assets/images/fushimi-inari-shrine-gates.jpg'),
 };
+
+// Helper: List of location images to pick randomly for the AI result
+const locationImages = [images.senso, images.cafe, images.fushimi];
 
 const feedData = [
     {
@@ -69,6 +74,35 @@ const listData: Array<ActionRow | FeedItem> = [{ type: 'actions', id: 'actions' 
 
 export function HomeTab() {
     const [showLogSpot, setShowLogSpot] = useState(false);
+    const [showNewTripSheet, setShowNewTripSheet] = useState(false); // <--- 2. Add State for Trip Sheet
+    
+    const [isLuckyLoading, setIsLuckyLoading] = useState(false);
+    const [luckySpot, setLuckySpot] = useState<any>(null);
+
+    const handleGetLucky = async () => {
+        setIsLuckyLoading(true);
+        setLuckySpot(null);
+
+        try {
+            const spot = await getLucky();
+            const rawScore = (spot.compatibilityScore || 0) * 100;
+            const displayScore = rawScore > 99 ? 99 : rawScore.toFixed(0);
+            const randomImg = locationImages[Math.floor(Math.random() * locationImages.length)];
+
+            setLuckySpot({
+                ...spot,
+                image: randomImg,
+                matchReason: `AI Match: ${displayScore}%`,
+                distance: typeof spot.distance === 'number' ? `${spot.distance} km` : spot.distance,
+            });
+
+        } catch (e: any) {
+            console.error(e);
+            Alert.alert("AI Error", "Could not find a lucky spot. Please try again.");
+        } finally {
+            setIsLuckyLoading(false);
+        }
+    };
 
     return (
         <SafeAreaView className="flex-1 bg-background" edges={['top']}>
@@ -94,18 +128,35 @@ export function HomeTab() {
                     if ('type' in item) {
                         return (
                             <View className="py-4 flex-row gap-3">
+                                {/* Log Spot Button */}
                                 <Pressable
                                     onPress={() => setShowLogSpot(true)}
                                     className="flex-1 h-12 rounded-xl bg-primary items-center justify-center flex-row">
                                     <Feather name="plus" size={18} color="#0f1116" />
                                     <Text className="ml-2 text-primary-foreground font-semibold">Log a Spot</Text>
                                 </Pressable>
-                                <Pressable className="flex-1 h-12 rounded-xl bg-secondary items-center justify-center flex-row">
-                                    <MaterialIcons name="auto-awesome" size={20} color="#33d6b3" />
-                                    <Text className="ml-2 text-secondary-foreground font-semibold">Get Lucky</Text>
+
+                                {/* Get Lucky Button */}
+                                <Pressable 
+                                    onPress={handleGetLucky}
+                                    disabled={isLuckyLoading}
+                                    className={`flex-1 h-12 rounded-xl bg-secondary items-center justify-center flex-row ${isLuckyLoading ? 'opacity-80' : ''}`}
+                                >
+                                    {isLuckyLoading ? (
+                                        <ActivityIndicator size="small" color="#33d6b3" />
+                                    ) : (
+                                        <>
+                                            <MaterialIcons name="auto-awesome" size={20} color="#33d6b3" />
+                                            <Text className="ml-2 text-secondary-foreground font-semibold">Get Lucky</Text>
+                                        </>
+                                    )}
                                 </Pressable>
 
-                                <Pressable className="h-12 w-12 rounded-xl bg-secondary items-center justify-center">
+                                {/* Plane Button - Connected! */}
+                                <Pressable 
+                                    onPress={() => setShowNewTripSheet(true)} // <--- 3. Open Sheet
+                                    className="h-12 w-12 rounded-xl bg-secondary items-center justify-center"
+                                >
                                     <Ionicons name="airplane" size={18} color="#fff" />
                                 </Pressable>
                             </View>
@@ -117,6 +168,62 @@ export function HomeTab() {
             />
 
             <LogSpotSheet open={showLogSpot} onOpenChange={setShowLogSpot} />
+            
+            {/* 4. Render the New Trip Sheet */}
+            <NewTripSheet open={showNewTripSheet} onOpenChange={setShowNewTripSheet} />
+
+            {/* Lucky Result Modal */}
+            <Modal visible={!!luckySpot} animationType="slide" transparent>
+                <View className="flex-1 bg-black/50 justify-end">
+                    <View className="bg-background rounded-t-3xl p-6 min-h-[50%]">
+                        <View className="flex-row justify-between items-center mb-4">
+                            <Text className="text-2xl font-bold text-foreground">Your Lucky Spot!</Text>
+                            <Pressable onPress={() => setLuckySpot(null)} className="p-2 bg-secondary rounded-full">
+                                <Feather name="x" size={24} color="#fff" />
+                            </Pressable>
+                        </View>
+
+                        <Text className="text-muted-foreground mb-6">
+                            Based on your feed activity, we think you'll love this:
+                        </Text>
+
+                        {luckySpot && (
+                            <View className="bg-card border border-border rounded-2xl overflow-hidden mb-6">
+                                <Image source={luckySpot.image} className="w-full h-48" resizeMode="cover" />
+
+                                <View className="p-4">
+                                    <View className="flex-row justify-between items-start mb-2">
+                                        <Text className="text-xl font-bold text-foreground flex-1 mr-2">{luckySpot.name}</Text>
+                                        <View className="bg-green-100 dark:bg-green-900 px-2 py-1 rounded">
+                                            <Text className="text-green-700 dark:text-green-300 font-bold text-xs">{luckySpot.aiScore}</Text>
+                                        </View>
+                                    </View>
+
+                                    <Text className="text-muted-foreground mb-3">{luckySpot.location} • {luckySpot.distance}</Text>
+
+                                    <View className="bg-purple-100 dark:bg-purple-900/30 self-start px-3 py-1.5 rounded-lg mb-4 flex-row items-center">
+                                        <MaterialIcons name="auto-awesome" size={14} color="#a855f7" />
+                                        <Text className="text-purple-700 dark:text-purple-300 text-xs font-semibold ml-1">{luckySpot.matchReason}</Text>
+                                    </View>
+
+                                    <View className="flex-row flex-wrap gap-2">
+                                        {luckySpot.tags && luckySpot.tags.map((t: string) => (
+                                            <Text key={t} className="text-xs text-muted-foreground bg-secondary px-2 py-1 rounded">#{t}</Text>
+                                        ))}
+                                    </View>
+                                </View>
+                            </View>
+                        )}
+
+                        <Pressable
+                            onPress={() => setLuckySpot(null)}
+                            className="w-full bg-primary h-14 rounded-xl items-center justify-center"
+                        >
+                            <Text className="text-primary-foreground font-bold text-lg">Awesome!</Text>
+                        </Pressable>
+                    </View>
+                </View>
+            </Modal>
         </SafeAreaView>
     );
 }
