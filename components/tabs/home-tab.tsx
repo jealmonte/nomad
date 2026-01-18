@@ -1,110 +1,213 @@
-import React from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Image } from 'react-native';
+// components/tabs/home-tab.tsx
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  ScrollView,
+  StyleSheet,
+  TouchableOpacity,
+} from 'react-native';
+import { Plus, Sparkles, Plane } from 'lucide-react-native';
+
+import { SpotCard } from '../cards/spot-card';
+import { LogSpotSheet } from '../sheets/log-spot-sheet'; // your RN version
+
+const feedData = [
+  {
+    id: 1,
+    user: {
+      name: 'Sarah Chen',
+      avatar: require('../../public/diverse-woman-avatar.png'),
+      handle: '@sarahc',
+    },
+    spot: {
+      name: 'Senso-ji Temple',
+      location: 'Tokyo, Japan',
+      image: require('../../public/senso-ji-temple-tokyo.jpg'),
+      aiScore: 9.2,
+      tags: ['temples', 'culture', 'must-see'],
+    },
+    review:
+      "Absolutely magical at sunrise. The crowds are minimal and the light is perfect for photos. Don't skip the nearby street food!",
+    photos: 3,
+    timestamp: '2h ago',
+  },
+  {
+    id: 2,
+    user: {
+      name: 'Marco Rivera',
+      avatar: require('../../public/man-avatar-beard.png'),
+      handle: '@marco_travels',
+    },
+    spot: {
+      name: 'Café de Flore',
+      location: 'Paris, France',
+      image: require('../../public/cafe-de-flore-paris.jpg'),
+      aiScore: 8.7,
+      tags: ['coffee', 'iconic', 'breakfast'],
+    },
+    review:
+      'Classic Parisian vibes. The hot chocolate is legendary but pricey. Perfect for people watching.',
+    photos: 2,
+    timestamp: '5h ago',
+  },
+  {
+    id: 3,
+    user: {
+      name: 'Emma Wilson',
+      avatar: require('../../public/woman-blonde-avatar.jpg'),
+      handle: '@emma.w',
+    },
+    spot: {
+      name: 'Fushimi Inari Shrine',
+      location: 'Kyoto, Japan',
+      image: require('../../public/fushimi-inari-shrine-gates.jpg'),
+      aiScore: 9.5,
+      tags: ['temples', 'hiking', 'photography'],
+    },
+    review:
+      'The hike through thousands of torii gates is surreal. Go early morning to beat the crowds - totally worth the early wake up!',
+    photos: 5,
+    timestamp: '1d ago',
+  },
+];
 
 export function HomeTab() {
+  const [showLogSpot, setShowLogSpot] = useState(false);
+
   return (
-    <ScrollView style={styles.container}>
-      {/* Header Section */}
+    <View style={styles.container}>
+      {/* Header */}
       <View style={styles.header}>
         <View>
-          <Text style={styles.greeting}>Good morning,</Text>
-          <Text style={styles.username}>Lawrence</Text>
+          <Text style={styles.title}>Nomad</Text>
+          <Text style={styles.subtitle}>Your travel feed</Text>
         </View>
-        <TouchableOpacity style={styles.profileButton}>
-          {/* Placeholder for Profile Icon */}
-          <View style={styles.avatarPlaceholder} />
-        </TouchableOpacity>
+        <View style={styles.headerActions}>
+          <TouchableOpacity
+            onPress={() => {
+              /* hook into Get Lucky later */
+            }}
+            style={styles.iconButton}
+          >
+            <Sparkles size={20} color="#34D399" />
+          </TouchableOpacity>
+        </View>
       </View>
 
-      {/* Search Bar Placeholder */}
-      <View style={styles.searchContainer}>
-        <Text style={styles.searchText}>Where to next?</Text>
-      </View>
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={{ paddingBottom: 24 }}
+      >
+        {/* Quick actions */}
+        <View style={styles.quickActions}>
+          <TouchableOpacity
+            onPress={() => setShowLogSpot(true)}
+            style={[styles.actionButton, styles.primaryButton]}
+          >
+            <Plus size={20} color="#ffffff" style={{ marginRight: 8 }} />
+            <Text style={styles.primaryButtonText}>Log a Spot</Text>
+          </TouchableOpacity>
 
-      {/* Featured Section */}
-      <Text style={styles.sectionTitle}>Featured Trips</Text>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horizontalScroll}>
-        <View style={styles.card}>
-          <View style={styles.cardImagePlaceholder} />
-          <Text style={styles.cardTitle}>Bali, Indonesia</Text>
-          <Text style={styles.cardSubtitle}>5 days • Relaxing</Text>
+          <TouchableOpacity style={[styles.actionButton, styles.secondary]}>
+            <Sparkles size={20} color="#111827" style={{ marginRight: 8 }} />
+            <Text style={styles.secondaryText}>Get Lucky</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={[styles.smallIconButton, styles.secondary]}>
+            <Plane size={20} color="#111827" />
+          </TouchableOpacity>
         </View>
-        <View style={styles.card}>
-          <View style={styles.cardImagePlaceholder} />
-          <Text style={styles.cardTitle}>Tokyo, Japan</Text>
-          <Text style={styles.cardSubtitle}>7 days • City</Text>
+
+        {/* Feed */}
+        <View style={styles.feedContainer}>
+          {feedData.map((item) => (
+            <SpotCard key={item.id} {...item} />
+          ))}
         </View>
       </ScrollView>
-    </ScrollView>
+
+      {/* Log a spot sheet/modal – implementation is up to your RN version */}
+      <LogSpotSheet open={showLogSpot} onOpenChange={setShowLogSpot} />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#020617', // match your dark theme if desired
   },
   header: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    paddingTop: 52,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: '#1f2937',
+    backgroundColor: 'rgba(2,6,23,0.95)',
+  },
+  title: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: '#f9fafb',
+  },
+  subtitle: {
+    fontSize: 13,
+    color: '#9ca3af',
+  },
+  headerActions: {
+    position: 'absolute',
+    right: 16,
+    top: 52,
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 20,
-    paddingTop: 60, // Extra padding for top status bar
   },
-  greeting: {
-    fontSize: 16,
-    color: '#666',
+  iconButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#020617',
   },
-  username: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#000',
+  scroll: {
+    flex: 1,
   },
-  profileButton: {
-    padding: 5,
+  quickActions: {
+    flexDirection: 'row',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    gap: 12,
+    alignItems: 'center',
   },
-  avatarPlaceholder: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#ddd',
+  actionButton: {
+    flex: 1,
+    height: 48,
+    borderRadius: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  searchContainer: {
-    marginHorizontal: 20,
-    padding: 15,
-    backgroundColor: '#f5f5f5',
-    borderRadius: 12,
-    marginBottom: 20,
+  primaryButton: {
+    backgroundColor: '#22c55e',
   },
-  searchText: {
-    color: '#999',
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginLeft: 20,
-    marginBottom: 10,
-  },
-  horizontalScroll: {
-    paddingLeft: 20,
-  },
-  card: {
-    width: 200,
-    marginRight: 15,
-  },
-  cardImagePlaceholder: {
-    width: 200,
-    height: 120,
-    backgroundColor: '#eee',
-    borderRadius: 12,
-    marginBottom: 8,
-  },
-  cardTitle: {
-    fontSize: 16,
+  primaryButtonText: {
+    color: '#ffffff',
     fontWeight: '600',
   },
-  cardSubtitle: {
-    fontSize: 14,
-    color: '#666',
+  secondary: {
+    backgroundColor: '#111827',
+  },
+  secondaryText: {
+    color: '#f9fafb',
+    fontWeight: '500',
+  },
+  smallIconButton: {
+    width: 48,
+  },
+  feedContainer: {
+    paddingHorizontal: 16,
+    paddingBottom: 16,
+    gap: 12,
   },
 });
