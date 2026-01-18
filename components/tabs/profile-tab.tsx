@@ -1,70 +1,73 @@
 // components/tabs/profile-tab.tsx
-import { RankedSpotCard, type RankedSpotCardProps } from '@/components/cards/ranked-spot-card';
-import { getCurrentUserId } from '@/lib/auth';
-import { supabase } from '@/lib/supabase';
-import { Feather } from '@expo/vector-icons';
-import * as SMS from 'expo-sms';
-import React, { useEffect, useState } from 'react';
-import { Alert, FlatList, Image, Pressable, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import {
+  RankedSpotCard,
+  type RankedSpotCardProps,
+} from "@/components/cards/ranked-spot-card";
+import { getCurrentUserId } from "@/lib/auth";
+import { supabase } from "@/lib/supabase";
+import { Feather } from "@expo/vector-icons";
+import * as SMS from "expo-sms";
+import React, { useEffect, useState } from "react";
+import { Alert, FlatList, Image, Pressable, Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 const images = {
-  fushimi: require('@/assets/images/fushimi-inari-torii.jpg'),
-  cafe: require('@/assets/images/cafe-central-vienna.jpg'),
-  sushi: require('@/assets/images/sushi-restaurant-tokyo.jpg'),
-  plitvice: require('@/assets/images/plitvice-lakes-waterfall.jpg'),
-  angkor: require('@/assets/images/angkor-wat-sunrise.jpg'),
+  fushimi: require("@/assets/images/fushimi-inari-torii.jpg"),
+  cafe: require("@/assets/images/cafe-central-vienna.jpg"),
+  sushi: require("@/assets/images/sushi-restaurant-tokyo.jpg"),
+  plitvice: require("@/assets/images/plitvice-lakes-waterfall.jpg"),
+  angkor: require("@/assets/images/angkor-wat-sunrise.jpg"),
 };
 
 const rankedSpots: RankedSpotCardProps[] = [
   {
     rank: 1,
-    name: 'Fushimi Inari Shrine',
-    location: 'Kyoto, Japan',
+    name: "Fushimi Inari Shrine",
+    location: "Kyoto, Japan",
     image: images.fushimi,
     aiScore: 9.8,
-    tag: 'temples',
+    tag: "temples",
   },
   {
     rank: 2,
-    name: 'Café Central',
-    location: 'Vienna, Austria',
+    name: "Café Central",
+    location: "Vienna, Austria",
     image: images.cafe,
     aiScore: 9.6,
-    tag: 'coffee',
+    tag: "coffee",
   },
   {
     rank: 3,
-    name: 'Sukiyabashi Jiro',
-    location: 'Tokyo, Japan',
+    name: "Sukiyabashi Jiro",
+    location: "Tokyo, Japan",
     image: images.sushi,
     aiScore: 9.5,
-    tag: 'food',
+    tag: "food",
   },
   {
     rank: 4,
-    name: 'Plitvice Lakes',
-    location: 'Croatia',
+    name: "Plitvice Lakes",
+    location: "Croatia",
     image: images.plitvice,
     aiScore: 9.4,
-    tag: 'nature',
+    tag: "nature",
   },
   {
     rank: 5,
-    name: 'Angkor Wat',
-    location: 'Siem Reap, Cambodia',
+    name: "Angkor Wat",
+    location: "Siem Reap, Cambodia",
     image: images.angkor,
     aiScore: 9.3,
-    tag: 'temples',
+    tag: "temples",
   },
 ];
 
-const SLOGAN = 'discover your perfect spots with AI-powered recommendations';
+const SLOGAN = "discover your perfect spots with AI-powered recommendations";
 
 async function handleShare(inviteCode: string) {
   const isAvailable = await SMS.isAvailableAsync();
   if (!isAvailable) {
-    Alert.alert('Not supported', 'SMS is not available on this device.');
+    Alert.alert("Not supported", "SMS is not available on this device.");
     return;
   }
 
@@ -92,8 +95,8 @@ type ProfileTabProps = {
   };
 };
 
-type ListItem = { type: 'content'; id: 'content' };
-const listData: ListItem[] = [{ type: 'content', id: 'content' }];
+type ListItem = { type: "content"; id: "content" };
+const listData: ListItem[] = [{ type: "content", id: "content" }];
 
 export function ProfileTab({
   onLogout,
@@ -120,7 +123,7 @@ export function ProfileTab({
       const userId = await getCurrentUserId();
 
       if (!userId) {
-        console.error('PROFILE stats: no auth user');
+        console.error("PROFILE stats: no auth user");
         return;
       }
 
@@ -180,7 +183,7 @@ export function ProfileTab({
   }, [tooltip]);
 
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={['top']}>
+    <SafeAreaView className="flex-1 bg-background" edges={["top"]}>
       <FlatList
         data={listData}
         stickyHeaderIndices={[0]}
@@ -228,7 +231,7 @@ export function ProfileTab({
                   source={{ uri: profile.avatar_url }}
                   className="h-20 w-20 rounded-full border-2 border-primary"
                   resizeMode="cover"
-                  style={{ backgroundColor: 'transparent' }}
+                  style={{ backgroundColor: "transparent" }}
                 />
               ) : (
                 <View className="h-20 w-20 rounded-full border-2 border-primary items-center justify-center bg-secondary">
@@ -236,10 +239,14 @@ export function ProfileTab({
                 </View>
               )}
               <View className="flex-1">
-                <Text className="text-xl font-bold text-foreground">{fullName}</Text>
+                <Text className="text-xl font-bold text-foreground">
+                  {fullName}
+                </Text>
                 <Text className="text-sm text-muted-foreground">{handle}</Text>
                 {profile.bio ? (
-                  <Text className="text-sm text-foreground mt-1">{profile.bio}</Text>
+                  <Text className="text-sm text-foreground mt-1">
+                    {profile.bio}
+                  </Text>
                 ) : null}
               </View>
             </View>
@@ -323,6 +330,7 @@ export function ProfileTab({
               tooltipPosition="bottom"
             />
             </View>
+          </View>
 
             {/* Taste profile tags */}
             <View>
@@ -331,8 +339,13 @@ export function ProfileTab({
               </Text>
               <View className="flex-row flex-wrap gap-2">
                 {profile.topTags.map((tag) => (
-                  <View key={tag} className="bg-secondary rounded-full px-3 py-1">
-                    <Text className="text-secondary-foreground text-xs">{tag}</Text>
+                  <View
+                    key={tag}
+                    className="bg-secondary rounded-full px-3 py-1"
+                  >
+                    <Text className="text-secondary-foreground text-xs">
+                      {tag}
+                    </Text>
                   </View>
                 ))}
               </View>
@@ -354,7 +367,9 @@ export function ProfileTab({
             <View className="p-4 rounded-xl border border-primary/30 bg-primary/10">
               <View className="flex-row items-center justify-between">
                 <View>
-                  <Text className="font-semibold text-foreground">Invite Friends</Text>
+                  <Text className="font-semibold text-foreground">
+                    Invite Friends
+                  </Text>
                   <Text className="text-sm text-muted-foreground">
                     Share your invite code
                   </Text>

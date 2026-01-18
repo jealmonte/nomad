@@ -17,6 +17,7 @@ import { GeneratedItinerarySheet } from './GeneratedItinerarySheet'; // Ensure e
 type NewTripSheetProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onTripGenerated?: (trip: any) => void;
 };
 
 const interests = [
@@ -36,9 +37,9 @@ const interests = [
   'Family',
   'Wildlife',
   'Music',
-  ];
-  
-export function NewTripSheet({ open, onOpenChange }: NewTripSheetProps) {
+];
+
+export function NewTripSheet({ open, onOpenChange, onTripGenerated }: NewTripSheetProps) {
   const sheetRef = useRef<BottomSheetModal>(null);
   const snapPoints = useMemo(() => ['85%'], []);
   const theme = useColorScheme() ?? 'light';
@@ -52,7 +53,7 @@ export function NewTripSheet({ open, onOpenChange }: NewTripSheetProps) {
   // --- UI State ---
   const [showCalendar, setShowCalendar] = useState(false);
   const [activeDateMode, setActiveDateMode] = useState<'start' | 'end'>('start');
-  
+
   // 2. STATE FOR THE RESULT SHEET
   const [showGeneratedItinerary, setShowGeneratedItinerary] = useState(false);
 
@@ -107,8 +108,8 @@ export function NewTripSheet({ open, onOpenChange }: NewTripSheetProps) {
   // 3. HANDLE GENERATE BUTTON CLICK
   const handleGenerateClick = () => {
     if (!destination || !startDate || !endDate) {
-        Alert.alert("Missing Info", "Please select a destination and dates first.");
-        return;
+      Alert.alert("Missing Info", "Please select a destination and dates first.");
+      return;
     }
     setShowGeneratedItinerary(true);
   };
@@ -117,10 +118,10 @@ export function NewTripSheet({ open, onOpenChange }: NewTripSheetProps) {
   const handleSaveTrip = () => {
     // Close the generated itinerary modal
     setShowGeneratedItinerary(false);
-    
+
     // Close the New Trip Sheet (the parent bottom sheet)
     onOpenChange(false);
-    
+
     // Optional: Reset form immediately
     resetForm();
   };
@@ -156,12 +157,12 @@ export function NewTripSheet({ open, onOpenChange }: NewTripSheetProps) {
                 name="map-pin"
                 size={16}
                 color={Colors[theme].icon}
-                style={{ 
-                  position: 'absolute', 
-                  left: 12, 
-                  top: '50%', 
-                  marginTop: -8, 
-                  zIndex: 10 
+                style={{
+                  position: 'absolute',
+                  left: 12,
+                  top: '50%',
+                  marginTop: -8,
+                  zIndex: 10
                 }}
               />
               <BottomSheetTextInput
@@ -243,7 +244,7 @@ export function NewTripSheet({ open, onOpenChange }: NewTripSheetProps) {
           </View>
 
           {/* Generate Button */}
-          <Pressable 
+          <Pressable
             onPress={handleGenerateClick}
             className="mt-6 h-12 rounded-xl bg-primary items-center justify-center flex-row"
           >
@@ -260,31 +261,51 @@ export function NewTripSheet({ open, onOpenChange }: NewTripSheetProps) {
         animationType="fade"
         onRequestClose={() => setShowCalendar(false)}
       >
-        <Pressable 
-          style={styles.modalOverlay} 
+        <Pressable
+          style={styles.modalOverlay}
           onPress={() => setShowCalendar(false)}
         >
           <Pressable style={styles.calendarContainer} onPress={(e) => e.stopPropagation()}>
-            <SimpleCalendar 
-                startDate={startDate}
-                endDate={endDate}
-                onDateSelect={handleDateSelect}
-                onDone={() => setShowCalendar(false)}
+            <SimpleCalendar
+              startDate={startDate}
+              endDate={endDate}
+              onDateSelect={handleDateSelect}
+              onDone={() => setShowCalendar(false)}
             />
           </Pressable>
         </Pressable>
       </Modal>
 
       {/* Generated Itinerary Sheet - Now with onSave handler */}
-      <GeneratedItinerarySheet 
+      <GeneratedItinerarySheet
         open={showGeneratedItinerary}
         onOpenChange={setShowGeneratedItinerary}
         destination={destination}
         startDate={startDate ? format(startDate, 'MMM d') : ''}
         endDate={endDate ? format(endDate, 'MMM d') : ''}
         interests={selectedInterests}
-        onSave={handleSaveTrip}
+        onSave={(itineraryData) => {
+          // Build the trip data object with the correct structure
+          const tripData = {
+            normalizedDestination: destination,
+            startDate: startDate ? format(startDate, 'MMM d') : '',
+            endDate: endDate ? format(endDate, 'MMM d') : '',
+            itinerary: itineraryData,
+            totalSpots: itineraryData.reduce((sum: number, day: any) => {
+              return sum + (day.activities?.length || 0);
+            }, 0),
+          };
+
+          // Send trip data back to parent
+          if (onTripGenerated) {
+            onTripGenerated(tripData);
+          }
+          setShowGeneratedItinerary(false);
+          onOpenChange(false);
+        }}
+
       />
+
     </>
   );
 }
@@ -305,8 +326,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     shadowColor: "#000",
     shadowOffset: {
-        width: 0,
-        height: 2,
+      width: 0,
+      height: 2,
     },
     shadowOpacity: 0.25,
     shadowRadius: 3.84,

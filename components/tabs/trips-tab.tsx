@@ -11,9 +11,10 @@ const images = {
   tokyo: require('@/assets/images/tokyo-skyline-night.png'),
   barcelona: require('@/assets/images/barcelona-sagrada-familia.png'),
   bali: require('@/assets/images/bali-rice-terraces.png'),
+  nyc: { uri: 'https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?w=800' }
 };
 
-const tripsData: TripCardProps[] = [
+const initialTripsData: TripCardProps[] = [
   {
     id: 1,
     destination: 'Tokyo, Japan',
@@ -49,9 +50,24 @@ const listData: ListItem[] = [{ type: 'content', id: 'content' }];
 export function TripsTab() {
   const [showNewTrip, setShowNewTrip] = useState(false);
   const [selectedTrip, setSelectedTrip] = useState<TripCardProps | null>(null);
+  const [tripsData, setTripsData] = useState<TripCardProps[]>(initialTripsData);
 
-  const upcomingTrips = useMemo(() => tripsData.filter((t) => t.status === 'upcoming'), []);
-  const pastTrips = useMemo(() => tripsData.filter((t) => t.status === 'past'), []);
+  const addGeneratedTrip = (generatedTrip: any) => {
+    const newTrip: TripCardProps = {
+      id: Date.now(),
+      destination: generatedTrip.normalizedDestination,
+      image: images.nyc,
+      dates: `${generatedTrip.startDate} - ${generatedTrip.endDate}`,
+      status: 'upcoming',
+      daysCount: generatedTrip.itinerary.length,
+      spotsCount: generatedTrip.totalSpots,
+    };
+
+    setTripsData(prev => [newTrip, ...prev]);
+  };
+
+  const upcomingTrips = useMemo(() => tripsData.filter((t) => t.status === 'upcoming'), [tripsData]);
+  const pastTrips = useMemo(() => tripsData.filter((t) => t.status === 'past'), [tripsData]);
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={['top']}>
@@ -124,7 +140,12 @@ export function TripsTab() {
         )}
       />
 
-      <NewTripSheet open={showNewTrip} onOpenChange={setShowNewTrip} />
+      <NewTripSheet
+        open={showNewTrip}
+        onOpenChange={setShowNewTrip}
+        onTripGenerated={addGeneratedTrip}
+      />
+
       <TripDetailSheet
         trip={selectedTrip}
         open={!!selectedTrip}

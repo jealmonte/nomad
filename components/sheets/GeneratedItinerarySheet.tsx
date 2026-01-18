@@ -1,18 +1,18 @@
-import { Feather, MaterialIcons, Ionicons } from '@expo/vector-icons';
-import { useState, useEffect } from 'react';
-import { Modal, View, Text, ScrollView, Image, Pressable, Alert } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import Animated, { 
-  useSharedValue, 
-  useAnimatedStyle, 
-  withRepeat, 
-  withTiming, 
-  withSequence, 
+import { Feather, Ionicons, MaterialIcons } from '@expo/vector-icons';
+import { useEffect, useState } from 'react';
+import { Alert, Image, Modal, Pressable, ScrollView, Text, View } from 'react-native';
+import Animated, {
+  cancelAnimation,
   Easing,
   FadeIn,
   FadeOut,
-  cancelAnimation
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withSequence,
+  withTiming
 } from 'react-native-reanimated';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
@@ -27,7 +27,8 @@ interface GeneratedItinerarySheetProps {
   startDate: string;
   endDate: string;
   interests: string[];
-  onSave: () => void;
+  onSave: (itineraryData: ItineraryDay[]) => void;
+
 }
 
 const loadingSteps = [
@@ -104,8 +105,8 @@ function AirplaneProgressBar({ progress, color, isComplete }: { progress: number
   const planeStyle = useAnimatedStyle(() => ({
     transform: [
       { translateX: -12 }, // Offset X to center icon on the tip of the line
-      { translateY: planeY.value }, 
-      { rotate: '0deg' } 
+      { translateY: planeY.value },
+      { rotate: '0deg' }
     ],
     left: `${planeLeft.value}%`,
     top: '50%', // Center in container
@@ -115,9 +116,9 @@ function AirplaneProgressBar({ progress, color, isComplete }: { progress: number
   return (
     <View className="w-full h-12 justify-center mt-6">
       <View className="w-full h-1 bg-muted/30 rounded-full overflow-visible">
-        <View 
-            className="h-full rounded-l-full shadow-sm transition-colors duration-300" 
-            style={{ width: `${progress}%`, backgroundColor: color, opacity: 0.8 }} 
+        <View
+          className="h-full rounded-l-full shadow-sm transition-colors duration-300"
+          style={{ width: `${progress}%`, backgroundColor: color, opacity: 0.8 }}
         />
       </View>
       <Animated.View className="absolute" style={planeStyle}>
@@ -129,45 +130,45 @@ function AirplaneProgressBar({ progress, color, isComplete }: { progress: number
 
 export function GeneratedItinerarySheet({ open, onOpenChange, destination, startDate, endDate, interests, onSave }: GeneratedItinerarySheetProps) {
   const theme = useColorScheme() ?? 'light';
-  
+
   const [isGenerating, setIsGenerating] = useState(true);
   const [progress, setProgress] = useState(0);
   const [currentStep, setCurrentStep] = useState(0);
-  const [itineraryData, setItineraryData] = useState<ItineraryDay[]>([]);
+  const [itineraryData, setGeneratedItineraryData] = useState<ItineraryDay[]>([]);
   const [selectedDay, setSelectedDay] = useState(1);
 
   const isComplete = progress >= 100;
-  const activeColor = isComplete ? '#22c55e' : Colors[theme].tint; 
+  const activeColor = isComplete ? '#22c55e' : Colors[theme].tint;
 
   useEffect(() => {
     if (open) {
       setIsGenerating(true);
       setProgress(0);
       setCurrentStep(0);
-      setItineraryData([]);
+      setGeneratedItineraryData([]);
       Image.prefetch(HEADER_IMAGE_URL);
 
       const fetchData = async () => {
         try {
-            const data = await generateItinerary(destination, interests, 3);
-            setItineraryData(data);
+          const data = await generateItinerary(destination, interests, 3);
+          setGeneratedItineraryData(data);
         } catch (e) {
-            console.error(e);
-            Alert.alert("Error", "Failed to generate itinerary");
-            onOpenChange(false);
+          console.error(e);
+          Alert.alert("Error", "Failed to generate itinerary");
+          onOpenChange(false);
         }
       };
       fetchData();
 
       const interval = setInterval(() => {
         setProgress(prev => {
-          const newProgress = prev + 0.8; 
+          const newProgress = prev + 0.8;
           const stepIndex = Math.floor((newProgress / 100) * loadingSteps.length);
           setCurrentStep(Math.min(stepIndex, loadingSteps.length - 1));
 
           if (newProgress >= 100) {
             clearInterval(interval);
-            setTimeout(() => setIsGenerating(false), 1500); 
+            setTimeout(() => setIsGenerating(false), 1500);
             return 100;
           }
           return newProgress;
@@ -183,27 +184,27 @@ export function GeneratedItinerarySheet({ open, onOpenChange, destination, start
   return (
     <Modal visible={open} animationType="slide" presentationStyle="pageSheet">
       <View className="flex-1 bg-background">
-        
-        <Pressable 
-            onPress={() => onOpenChange(false)} 
-            className="absolute top-4 right-4 z-50 w-9 h-9 bg-black/30 rounded-full items-center justify-center"
+
+        <Pressable
+          onPress={() => onOpenChange(false)}
+          className="absolute top-4 right-4 z-50 w-9 h-9 bg-black/30 rounded-full items-center justify-center"
         >
-            <Feather name="x" size={20} color="#fff" />
+          <Feather name="x" size={20} color="#fff" />
         </Pressable>
 
         {isGenerating ? (
           <Animated.View entering={FadeIn} exiting={FadeOut} className="flex-1 items-center justify-center px-8">
             <ThinkingAnimation color={activeColor} />
-            
+
             <Text className="text-2xl font-bold text-center mt-4 mb-2 text-foreground">
-                {isComplete ? "Trip Ready!" : "Creating Your Trip"}
+              {isComplete ? "Trip Ready!" : "Creating Your Trip"}
             </Text>
             <Text className="text-muted-foreground mb-4 text-center text-lg">To {destination || "Destination"}</Text>
-            
+
             <View className="w-full max-w-sm">
-                <AirplaneProgressBar progress={progress} color={activeColor} isComplete={isComplete} />
+              <AirplaneProgressBar progress={progress} color={activeColor} isComplete={isComplete} />
             </View>
-            
+
             <Animated.Text key={currentStep} entering={FadeIn.duration(300)} className="text-sm font-medium text-primary text-center mt-4 h-6">
               {isComplete ? "Finalizing details..." : loadingSteps[currentStep]}
             </Animated.Text>
@@ -215,8 +216,8 @@ export function GeneratedItinerarySheet({ open, onOpenChange, destination, start
               <Image source={{ uri: 'https://images.unsplash.com/photo-1602940659805-770d1b3b9911?q=80&w=1332&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D' }} className="w-full h-full" resizeMode="cover" />
               <View className="absolute inset-0 bg-black/40 p-6 justify-end">
                 <View className="flex-row items-center gap-2 mb-1">
-                    <MaterialIcons name="auto-awesome" size={16} color="#33d6b3" />
-                    <Text className="text-white/90 text-xs font-bold uppercase tracking-wider">AI Generated</Text>
+                  <MaterialIcons name="auto-awesome" size={16} color="#33d6b3" />
+                  <Text className="text-white/90 text-xs font-bold uppercase tracking-wider">AI Generated</Text>
                 </View>
                 <Text className="text-3xl font-bold text-white mb-1">{destination || "Tokyo"}</Text>
                 <Text className="text-white/90 text-sm">{startDate ? `${startDate} - ${endDate}` : "3 Days • $1,200 Est."}</Text>
@@ -225,70 +226,71 @@ export function GeneratedItinerarySheet({ open, onOpenChange, destination, start
 
             {/* Day Selector */}
             <View className="py-4 border-b border-border bg-background z-10">
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, gap: 10 }}>
-                    {itineraryData.map(day => (
-                        <Pressable 
-                            key={day.day}
-                            onPress={() => setSelectedDay(day.day)}
-                            className={`px-5 py-2 rounded-full border ${selectedDay === day.day ? 'bg-primary border-primary' : 'bg-transparent border-border'}`}
-                        >
-                            <Text className={`text-sm ${selectedDay === day.day ? 'text-primary-foreground font-semibold' : 'text-muted-foreground'}`}>
-                                Day {day.day}
-                            </Text>
-                        </Pressable>
-                    ))}
-                </ScrollView>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, gap: 10 }}>
+                {itineraryData.map(day => (
+                  <Pressable
+                    key={day.day}
+                    onPress={() => setSelectedDay(day.day)}
+                    className={`px-5 py-2 rounded-full border ${selectedDay === day.day ? 'bg-primary border-primary' : 'bg-transparent border-border'}`}
+                  >
+                    <Text className={`text-sm ${selectedDay === day.day ? 'text-primary-foreground font-semibold' : 'text-muted-foreground'}`}>
+                      Day {day.day}
+                    </Text>
+                  </Pressable>
+                ))}
+              </ScrollView>
             </View>
 
             {/* Content */}
             <ScrollView className="flex-1" contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 20, paddingBottom: 40 }}>
-                <Text className="text-xl font-bold text-foreground mb-6">{currentDayData?.title}</Text>
-                
-                <View className="gap-6">
-                    {currentDayData?.activities.map((item, index) => (
-                        <View key={index} className="flex-row">
-                            {/* Time & Score Column */}
-                            <View className="items-center w-16 mr-3 pt-1">
-                                <Text className="text-xs font-bold text-muted-foreground mb-1">{item.time}</Text>
-                                <View className="bg-green-100 dark:bg-green-900 px-1.5 py-0.5 rounded mb-2">
-                                    <Text className="text-[10px] font-bold text-green-700 dark:text-green-300">
-                                        {item.aiScore}
-                                    </Text>
-                                </View>
-                                <View className="w-[2px] flex-1 bg-border/60 rounded-full" />
-                            </View>
+              <Text className="text-xl font-bold text-foreground mb-6">{currentDayData?.title}</Text>
 
-                            {/* Card */}
-                            <View className="flex-1 bg-card p-4 rounded-2xl border border-border/60 shadow-sm mb-2">
-                                <View className="flex-row justify-between items-start mb-2">
-                                    <Text className="font-bold text-base text-foreground flex-1 mr-2">{item.spot}</Text>
-                                    <View className="bg-muted px-2 py-1 rounded-md">
-                                        <Text className="text-[10px] text-muted-foreground font-bold uppercase">{item.type}</Text>
-                                    </View>
-                                </View>
-                                <Text className="text-muted-foreground text-sm mb-4 leading-relaxed">{item.desc}</Text>
-                                <View className="flex-row gap-4 border-t border-border/40 pt-3">
-                                    <View className="flex-row items-center gap-1.5">
-                                        <Feather name="clock" size={14} color={Colors[theme].icon} />
-                                        <Text className="text-xs text-muted-foreground font-medium">{item.duration}</Text>
-                                    </View>
-                                    <View className="flex-row items-center gap-1.5">
-                                        <Feather name="dollar-sign" size={14} color={Colors[theme].icon} />
-                                        <Text className="text-xs text-muted-foreground font-medium">{item.cost}</Text>
-                                    </View>
-                                </View>
-                            </View>
+              <View className="gap-6">
+                {currentDayData?.activities.map((item, index) => (
+                  <View key={index} className="flex-row">
+                    {/* Time & Score Column */}
+                    <View className="items-center w-16 mr-3 pt-1">
+                      <Text className="text-xs font-bold text-muted-foreground mb-1">{item.time}</Text>
+                      <View className="bg-green-100 dark:bg-green-900 px-1.5 py-0.5 rounded mb-2">
+                        <Text className="text-[10px] font-bold text-green-700 dark:text-green-300">
+                          {item.aiScore}
+                        </Text>
+                      </View>
+                      <View className="w-[2px] flex-1 bg-border/60 rounded-full" />
+                    </View>
+
+                    {/* Card */}
+                    <View className="flex-1 bg-card p-4 rounded-2xl border border-border/60 shadow-sm mb-2">
+                      <View className="flex-row justify-between items-start mb-2">
+                        <Text className="font-bold text-base text-foreground flex-1 mr-2">{item.spot}</Text>
+                        <View className="bg-muted px-2 py-1 rounded-md">
+                          <Text className="text-[10px] text-muted-foreground font-bold uppercase">{item.type}</Text>
                         </View>
-                    ))}
-                </View>
+                      </View>
+                      <Text className="text-muted-foreground text-sm mb-4 leading-relaxed">{item.desc}</Text>
+                      <View className="flex-row gap-4 border-t border-border/40 pt-3">
+                        <View className="flex-row items-center gap-1.5">
+                          <Feather name="clock" size={14} color={Colors[theme].icon} />
+                          <Text className="text-xs text-muted-foreground font-medium">{item.duration}</Text>
+                        </View>
+                        <View className="flex-row items-center gap-1.5">
+                          <Feather name="dollar-sign" size={14} color={Colors[theme].icon} />
+                          <Text className="text-xs text-muted-foreground font-medium">{item.cost}</Text>
+                        </View>
+                      </View>
+                    </View>
+                  </View>
+                ))}
+              </View>
             </ScrollView>
 
             {/* Footer */}
             <SafeAreaView edges={['bottom']} className="px-4 py-4 border-t border-border bg-background shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
-                <Pressable onPress={onSave} className="w-full bg-primary h-14 rounded-2xl items-center justify-center flex-row gap-2 active:opacity-90">
-                    <Feather name="check" size={20} color="#fff" />
-                    <Text className="text-white font-bold text-base">Save to Trips</Text>
-                </Pressable>
+              <Pressable onPress={() => onSave(itineraryData)}
+                className="w-full bg-primary h-14 rounded-2xl items-center justify-center flex-row gap-2 active:opacity-90">
+                <Feather name="check" size={20} color="#fff" />
+                <Text className="text-white font-bold text-base">Save to Trips</Text>
+              </Pressable>
             </SafeAreaView>
           </Animated.View>
         )}
