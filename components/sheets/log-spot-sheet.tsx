@@ -1,110 +1,125 @@
-"use client"
+import { Feather } from '@expo/vector-icons';
+import {
+    BottomSheetBackdrop,
+    BottomSheetModal,
+    BottomSheetScrollView,
+    BottomSheetTextInput,
+} from '@gorhom/bottom-sheet';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Pressable, Text, View } from 'react-native';
 
-import { useState } from "react"
-import { X, Camera, MapPin } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Badge } from "@/components/ui/badge"
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
+import { Colors } from '@/constants/theme';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 
-interface LogSpotSheetProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-}
+type LogSpotSheetProps = {
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+};
 
-const tags = ["temples", "coffee", "food", "nightlife", "nature", "museums", "beaches", "markets"]
+const tags = ['temples', 'coffee', 'food', 'nightlife', 'nature', 'museums', 'beaches', 'markets'];
 
 export function LogSpotSheet({ open, onOpenChange }: LogSpotSheetProps) {
-  const [rating, setRating] = useState(0)
-  const [selectedTags, setSelectedTags] = useState<string[]>([])
+    const sheetRef = useRef<BottomSheetModal>(null);
+    const snapPoints = useMemo(() => ['90%'], []);
+    const [rating, setRating] = useState(0);
+    const [selectedTags, setSelectedTags] = useState<string[]>([]);
+    const theme = useColorScheme() ?? 'light';
 
-  const toggleTag = (tag: string) => {
-    setSelectedTags((prev) => (prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]))
-  }
+    useEffect(() => {
+        if (open) sheetRef.current?.present();
+        else sheetRef.current?.dismiss();
+    }, [open]);
 
-  return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="h-[90vh] rounded-t-3xl bg-background">
-        <SheetHeader className="pb-4">
-          <div className="flex items-center justify-between">
-            <SheetTitle className="text-xl">Log a Spot</SheetTitle>
-            <Button variant="ghost" size="icon" onClick={() => onOpenChange(false)}>
-              <X className="w-5 h-5" />
-            </Button>
-          </div>
-        </SheetHeader>
+    const toggleTag = (tag: string) => {
+        setSelectedTags((prev) => (prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]));
+    };
 
-        <div className="space-y-6 overflow-y-auto pb-6">
-          {/* Photo Upload */}
-          <div className="aspect-video bg-muted rounded-xl flex flex-col items-center justify-center border-2 border-dashed border-border">
-            <Camera className="w-10 h-10 text-muted-foreground mb-2" />
-            <p className="text-sm text-muted-foreground">Add photos</p>
-          </div>
+    return (
+        <BottomSheetModal
+            ref={sheetRef}
+            snapPoints={snapPoints}
+            enablePanDownToClose
+            onDismiss={() => onOpenChange(false)}
+            backgroundStyle={{ backgroundColor: Colors[theme].background }}
+            handleIndicatorStyle={{ backgroundColor: Colors[theme].icon }}
+            backdropComponent={(props) => (
+                <BottomSheetBackdrop {...props} appearsOnIndex={0} disappearsOnIndex={-1} />
+            )}>
+            <BottomSheetScrollView contentContainerStyle={{ padding: 16, paddingBottom: 32 }}>
+                <View className="flex-row items-center justify-between mb-4">
+                    <Text className="text-xl font-semibold text-foreground">Log a Spot</Text>
+                    <Pressable
+                        onPress={() => onOpenChange(false)}
+                        className="h-9 w-9 items-center justify-center rounded-full bg-secondary">
+                        <Feather name="x" size={18} color={Colors[theme].text} />
+                    </Pressable>
+                </View>
 
-          {/* Spot Name */}
-          <div>
-            <label className="text-sm font-medium mb-2 block">Spot Name</label>
-            <Input placeholder="Enter the name of the place" className="bg-muted border-none rounded-xl" />
-          </div>
+                <Pressable className="h-44 rounded-xl border-2 border-dashed border-border items-center justify-center bg-muted">
+                    <Feather name="camera" size={28} color={Colors[theme].icon} />
+                    <Text className="text-sm text-muted-foreground mt-2">Add photos</Text>
+                </Pressable>
 
-          {/* Location */}
-          <div>
-            <label className="text-sm font-medium mb-2 block">Location</label>
-            <div className="relative">
-              <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input placeholder="City, Country" className="pl-9 bg-muted border-none rounded-xl" />
-            </div>
-          </div>
+                <View className="mt-6">
+                    <Text className="text-sm font-medium text-foreground mb-2">Spot Name</Text>
+                    <BottomSheetTextInput
+                        placeholder="Enter the name of the place"
+                        placeholderTextColor={Colors[theme].icon}
+                        className="bg-muted rounded-xl px-4 py-3 text-foreground"
+                    />
+                </View>
 
-          {/* Rating */}
-          <div>
-            <label className="text-sm font-medium mb-2 block">Your Rating</label>
-            <div className="flex gap-1">
-              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => (
-                <button
-                  key={num}
-                  onClick={() => setRating(num)}
-                  className={`w-8 h-8 rounded-full text-sm font-medium transition-colors ${
-                    rating >= num ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
-                  }`}
-                >
-                  {num}
-                </button>
-              ))}
-            </div>
-          </div>
+                <View className="mt-4">
+                    <Text className="text-sm font-medium text-foreground mb-2">Location</Text>
+                    <View>
+                        <Feather
+                            name="map-pin"
+                            size={16}
+                            color={Colors[theme].icon}
+                            style={{ position: 'absolute', left: 12, top: 14 }}
+                        />
+                        <BottomSheetTextInput
+                            placeholder="City, Country"
+                            placeholderTextColor={Colors[theme].icon}
+                            className="bg-muted rounded-xl px-4 py-3 text-foreground"
+                        />
+                    </View>
+                </View>
 
-          {/* Tags */}
-          <div>
-            <label className="text-sm font-medium mb-2 block">Tags</label>
-            <div className="flex flex-wrap gap-2">
-              {tags.map((tag) => (
-                <Badge
-                  key={tag}
-                  variant={selectedTags.includes(tag) ? "default" : "secondary"}
-                  className="cursor-pointer rounded-full px-3 py-1.5"
-                  onClick={() => toggleTag(tag)}
-                >
-                  {tag}
-                </Badge>
-              ))}
-            </div>
-          </div>
+                <View className="mt-4">
+                    <Text className="text-sm font-medium text-foreground mb-2">Tags</Text>
+                    <View className="flex-row flex-wrap gap-2">
+                        {tags.map((tag) => {
+                            const active = selectedTags.includes(tag);
+                            return (
+                                <Pressable
+                                    key={tag}
+                                    onPress={() => toggleTag(tag)}
+                                    className={`rounded-full px-3 py-1.5 ${active ? 'bg-primary' : 'bg-secondary'}`}>
+                                    <Text className={active ? 'text-primary-foreground text-xs' : 'text-secondary-foreground text-xs'}>
+                                        {tag}
+                                    </Text>
+                                </Pressable>
+                            );
+                        })}
+                    </View>
+                </View>
 
-          {/* Review */}
-          <div>
-            <label className="text-sm font-medium mb-2 block">Your Review</label>
-            <Textarea
-              placeholder="Share your experience..."
-              className="bg-muted border-none rounded-xl min-h-[100px] resize-none"
-            />
-          </div>
+                <View className="mt-4">
+                    <Text className="text-sm font-medium text-foreground mb-2">Your Review</Text>
+                    <BottomSheetTextInput
+                        placeholder="Share your experience..."
+                        placeholderTextColor={Colors[theme].icon}
+                        multiline
+                        textAlignVertical="top"
+                        className="bg-muted rounded-xl px-4 py-3 text-foreground min-h-[100px]"
+                    />
+                </View>
 
-          {/* Submit */}
-          <Button className="w-full h-12 rounded-xl bg-primary text-primary-foreground">Log This Spot</Button>
-        </div>
-      </SheetContent>
-    </Sheet>
-  )
+                <Pressable className="mt-6 h-12 rounded-xl bg-primary items-center justify-center">
+                    <Text className="text-primary-foreground font-semibold">Log This Spot</Text>
+                </Pressable>
+            </BottomSheetScrollView>
+        </BottomSheetModal>
+    );
 }

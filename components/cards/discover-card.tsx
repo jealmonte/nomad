@@ -1,58 +1,61 @@
-"use client"
+import { Feather } from '@expo/vector-icons';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import { Image, Text, View, type ImageSourcePropType } from 'react-native';
 
-import { MapPin, Bookmark } from "lucide-react"
-import { Badge } from "@/components/ui/badge"
-import { Card } from "@/components/ui/card"
-
-interface DiscoverCardProps {
-  name: string
-  location: string
-  image: string
-  aiScore: number
-  distance: string | number
-  tags: string[]
-  matchReason?: string
-}
+export type DiscoverCardProps = {
+    id: number;
+    name: string;
+    location: string;
+    image?: ImageSourcePropType | string;
+    aiScore: number;
+    distance: string;
+    tags: string[];
+    matchReason: string;
+};
 
 export function DiscoverCard({ name, location, image, aiScore, distance, tags, matchReason }: DiscoverCardProps) {
-  return (
-    <Card className="overflow-hidden bg-card border-border">
-      <div className="flex gap-3 p-3">
-        {/* Image */}
-        <div className="relative w-24 h-24 flex-shrink-0">
-          <img src={image || "/placeholder.svg"} alt={name} className="w-full h-full object-cover rounded-lg" />
-          <div className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs font-bold px-1.5 py-0.5 rounded-full">
-            {aiScore}
-          </div>
-        </div>
+    const imageSource = typeof image === 'string' ? { uri: image } : image;
 
-        {/* Content */}
-        <div className="flex-1 min-w-0">
-          <div className="flex items-start justify-between mb-1">
-            <h3 className="font-semibold truncate pr-2">{name}</h3>
-            <Bookmark className="w-5 h-5 text-muted-foreground flex-shrink-0" />
-          </div>
+    return (
+        <View className="bg-card border border-border rounded-xl overflow-hidden mb-4">
+            <View className="flex-row gap-3 p-3">
+                <View className="relative w-24 h-24">
+                    {imageSource ? (
+                        <Image source={imageSource} className="w-full h-full rounded-lg" resizeMode="cover" />
+                    ) : (
+                        <View className="w-full h-full rounded-lg bg-muted" />
+                    )}
+                    <View className="absolute -top-1 -right-1 bg-primary rounded-full px-1.5 py-0.5">
+                        <Text className="text-primary-foreground text-xs font-semibold">{aiScore}</Text>
+                    </View>
+                </View>
 
-          <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
-            <MapPin className="w-3 h-3" />
-            <span className="truncate">{location}</span>
-            <span>•</span>
-            <span>{typeof distance === 'number' ? `${distance} km` : distance}</span>
-          </div>
+                <View className="flex-1 min-w-0">
+                    <View className="flex-row items-start justify-between mb-1">
+                        <Text className="font-semibold text-foreground pr-2" numberOfLines={1}>
+                            {name}
+                        </Text>
+                        <MaterialCommunityIcons name="bookmark-outline" size={18} color="#a6a6a6" />
+                    </View>
 
-          {/* Tags */}
-          <div className="flex gap-1 flex-wrap mb-2">
-            {tags.slice(0, 3).map((tag) => (
-              <Badge key={tag} variant="secondary" className="text-xs rounded-full px-2 py-0">
-                {tag}
-              </Badge>
-            ))}
-          </div>
+                    <View className="flex-row items-center gap-2 mb-2">
+                        <Feather name="map-pin" size={12} color="#a6a6a6" />
+                        <Text className="text-xs text-muted-foreground" numberOfLines={1}>
+                            {location} • {distance}
+                        </Text>
+                    </View>
 
-          {/* Match Reason */}
-          {matchReason && <p className="text-xs text-primary">{matchReason}</p>}
-        </div>
-      </div>
-    </Card>
-  )
+                    <View className="flex-row flex-wrap gap-1 mb-2">
+                        {tags.slice(0, 3).map((tag) => (
+                            <View key={tag} className="bg-secondary rounded-full px-2 py-0.5">
+                                <Text className="text-xs text-secondary-foreground">{tag}</Text>
+                            </View>
+                        ))}
+                    </View>
+
+                    <Text className="text-xs text-primary">{matchReason}</Text>
+                </View>
+            </View>
+        </View>
+    );
 }

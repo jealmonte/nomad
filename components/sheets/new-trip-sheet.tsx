@@ -1,15 +1,20 @@
-"use client"
+import { Feather, MaterialIcons } from '@expo/vector-icons';
+import {
+    BottomSheetBackdrop,
+    BottomSheetModal,
+    BottomSheetScrollView,
+    BottomSheetTextInput,
+} from '@gorhom/bottom-sheet';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Pressable, Text, View } from 'react-native';
 
-import { useState, useEffect } from "react"
-import { View, Text, Modal, StyleSheet, TouchableOpacity, TextInput, ScrollView, Pressable, Keyboard, TouchableWithoutFeedback, Alert } from "react-native"
-import { X, MapPin, Calendar, Sparkles, Search } from "lucide-react-native"
-import { SimpleCalendar } from "@/components/ui/simple-calendar"
-import { format, isAfter } from "date-fns"
+import { Colors } from '@/constants/theme';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 
-interface NewTripSheetProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-}
+type NewTripSheetProps = {
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+};
 
 const initialInterests = ["temples", "food", "nightlife", "nature", "museums", "beaches", "shopping", "art"].map((interest) => ({ name: interest, selected: false }))
 

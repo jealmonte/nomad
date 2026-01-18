@@ -1,87 +1,91 @@
-"use client"
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import { Image, Pressable, Text, View, type ImageSourcePropType } from 'react-native';
 
-import { Heart, MessageCircle, Bookmark } from "lucide-react"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
-import { Card } from "@/components/ui/card"
-
-interface SpotCardProps {
+export type SpotCardProps = {
   user: {
-    name: string
-    avatar: string
-    handle: string
-  }
+    name: string;
+    avatar?: ImageSourcePropType | string;
+    handle: string;
+  };
   spot: {
-    name: string
-    location: string
-    image: string
-    aiScore: number
-    tags: string[]
-  }
-  review: string
-  photos: number
-  timestamp: string
-}
+    name: string;
+    location: string;
+    image?: ImageSourcePropType | string;
+    aiScore: number;
+    tags: string[];
+  };
+  review: string;
+  photos: number;
+  timestamp: string;
+};
 
 export function SpotCard({ user, spot, review, photos, timestamp }: SpotCardProps) {
+  const avatarSource =
+    typeof user.avatar === 'string' ? { uri: user.avatar } : user.avatar;
+  const imageSource =
+    typeof spot.image === 'string' ? { uri: spot.image } : spot.image;
+
   return (
-    <Card className="overflow-hidden bg-card border-border">
-      {/* User Header */}
-      <div className="flex items-center gap-3 p-3">
-        <Avatar className="w-10 h-10">
-          <AvatarImage src={user.avatar || "/placeholder.svg"} alt={user.name} />
-          <AvatarFallback>{user.name[0]}</AvatarFallback>
-        </Avatar>
-        <div className="flex-1">
-          <p className="font-semibold text-sm">{user.name}</p>
-          <p className="text-xs text-muted-foreground">{timestamp}</p>
-        </div>
-        <Bookmark className="w-5 h-5 text-muted-foreground" />
-      </div>
+    <View className="bg-card border border-border rounded-xl overflow-hidden mb-4">
+      <View className="flex-row items-center gap-3 p-3">
+        {avatarSource ? (
+          <Image source={avatarSource} className="h-10 w-10 rounded-full bg-muted" />
+        ) : (
+          <View className="h-10 w-10 rounded-full bg-muted items-center justify-center">
+            <Text className="text-foreground font-semibold">{user.name[0]}</Text>
+          </View>
+        )}
 
-      {/* Spot Image */}
-      <div className="relative">
-        <img src={spot.image || "/placeholder.svg"} alt={spot.name} className="w-full h-48 object-cover" />
-        <div className="absolute top-3 right-3 bg-background/90 backdrop-blur-sm rounded-full px-2.5 py-1 flex items-center gap-1">
-          <span className="text-primary font-bold text-sm">{spot.aiScore}</span>
-          <span className="text-xs text-muted-foreground">AI</span>
-        </div>
-      </div>
+        <View className="flex-1">
+          <Text className="font-semibold text-sm text-foreground">{user.name}</Text>
+          <Text className="text-xs text-muted-foreground">{timestamp}</Text>
+        </View>
 
-      {/* Content */}
-      <div className="p-3">
-        <div className="flex items-start justify-between mb-2">
-          <div>
-            <h3 className="font-semibold">{spot.name}</h3>
-            <p className="text-sm text-muted-foreground">{spot.location}</p>
-          </div>
-        </div>
+        <MaterialCommunityIcons name="bookmark-outline" size={20} color="#a6a6a6" />
+      </View>
 
-        {/* Tags */}
-        <div className="flex gap-1.5 mb-3 flex-wrap">
+      <View className="relative">
+        {imageSource ? (
+          <Image source={imageSource} className="w-full h-48" resizeMode="cover" />
+        ) : (
+          <View className="w-full h-48 bg-muted" />
+        )}
+        <View className="absolute top-3 right-3 bg-background/90 rounded-full px-2.5 py-1 flex-row items-center gap-1">
+          <Text className="text-primary font-bold text-sm">{spot.aiScore}</Text>
+          <Text className="text-xs text-muted-foreground">AI</Text>
+        </View>
+      </View>
+
+      <View className="p-3">
+        <View className="mb-2">
+          <Text className="font-semibold text-foreground">{spot.name}</Text>
+          <Text className="text-sm text-muted-foreground">{spot.location}</Text>
+        </View>
+
+        <View className="flex-row flex-wrap gap-1.5 mb-3">
           {spot.tags.map((tag) => (
-            <Badge key={tag} variant="secondary" className="text-xs rounded-full px-2 py-0.5">
-              {tag}
-            </Badge>
+            <View key={tag} className="bg-secondary rounded-full px-2 py-0.5">
+              <Text className="text-xs text-secondary-foreground">{tag}</Text>
+            </View>
           ))}
-        </div>
+        </View>
 
-        {/* Review */}
-        <p className="text-sm text-foreground/90 leading-relaxed mb-3">{review}</p>
+        <Text className="text-sm text-foreground/90 leading-relaxed mb-3">{review}</Text>
 
-        {/* Actions */}
-        <div className="flex items-center gap-4 pt-2 border-t border-border">
-          <button className="flex items-center gap-1.5 text-muted-foreground hover:text-primary transition-colors">
-            <Heart className="w-5 h-5" />
-            <span className="text-sm">Like</span>
-          </button>
-          <button className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors">
-            <MessageCircle className="w-5 h-5" />
-            <span className="text-sm">Comment</span>
-          </button>
-          {photos > 0 && <span className="text-xs text-muted-foreground ml-auto">+{photos} photos</span>}
-        </div>
-      </div>
-    </Card>
-  )
+        <View className="flex-row items-center gap-4 pt-2 border-t border-border">
+          <Pressable className="flex-row items-center gap-1.5">
+            <MaterialCommunityIcons name="heart-outline" size={20} color="#a6a6a6" />
+            <Text className="text-sm text-muted-foreground">Like</Text>
+          </Pressable>
+          <Pressable className="flex-row items-center gap-1.5">
+            <MaterialCommunityIcons name="message-outline" size={20} color="#a6a6a6" />
+            <Text className="text-sm text-muted-foreground">Comment</Text>
+          </Pressable>
+          {photos > 0 && (
+            <Text className="text-xs text-muted-foreground ml-auto">+{photos} photos</Text>
+          )}
+        </View>
+      </View>
+    </View>
+  );
 }

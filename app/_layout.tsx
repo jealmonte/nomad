@@ -1,44 +1,38 @@
-import { Stack } from 'expo-router';
-import { useFonts, Inter_400Regular, Inter_700Bold } from '@expo-google-fonts/inter';
-import { ActivityIndicator, View, StyleSheet } from 'react-native';
-import { useEffect } from 'react';
-import * as SplashScreen from 'expo-splash-screen';
+import '../global.css';
 
-// Prevent the splash screen from auto-hiding before asset loading is complete.
-SplashScreen.preventAutoHideAsync();
+import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
+import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
+import { Stack } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
+import 'react-native-gesture-handler';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import 'react-native-reanimated';
+
+import { View } from 'react-native';
+
+import { useColorScheme } from '@/hooks/use-color-scheme';
+
+export const unstable_settings = {
+  anchor: '(tabs)',
+};
 
 export default function RootLayout() {
-  const [loaded, error] = useFonts({
-    Inter_400Regular,
-    Inter_700Bold,
-  });
-
-  useEffect(() => {
-    if (loaded || error) {
-      SplashScreen.hideAsync();
-    }
-  }, [loaded, error]);
-
-/* if (!loaded && !error) {
-  return null;
-}
-*/
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
 
   return (
-    <Stack screenOptions={{
-      headerStyle: { backgroundColor: '#1a1a2e' },
-      headerTintColor: '#fff',
-      contentStyle: { backgroundColor: '#fff' }
-    }}>
-      {/* This defines your main index route */}
-      <Stack.Screen name="index" options={{ title: 'Nomad' }} />
-    </Stack>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <BottomSheetModalProvider>
+        <View className={(isDark ? 'dark ' : '') + 'flex-1'}>
+          <ThemeProvider value={isDark ? DarkTheme : DefaultTheme}>
+            <Stack>
+              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+              <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
+            </Stack>
+            <StatusBar style="auto" />
+          </ThemeProvider>
+        </View>
+      </BottomSheetModalProvider>
+    </GestureHandlerRootView >
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
-});
